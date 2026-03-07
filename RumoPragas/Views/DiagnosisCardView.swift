@@ -10,8 +10,8 @@ struct DiagnosisCardView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                diagnosis.severityLevel.color.opacity(0.18),
-                                diagnosis.severityLevel.color.opacity(0.06)
+                                diagnosis.severityLevel.color.opacity(0.15),
+                                diagnosis.severityLevel.color.opacity(0.05)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -20,7 +20,7 @@ struct DiagnosisCardView: View {
                     .frame(width: 56, height: 56)
                 Image(systemName: diagnosis.isHealthy ? "checkmark.circle.fill" : diagnosis.severityLevel.icon)
                     .font(.title3)
-                    .foregroundStyle(diagnosis.isHealthy ? .green : diagnosis.severityLevel.color)
+                    .foregroundStyle(diagnosis.isHealthy ? AppTheme.accent : diagnosis.severityLevel.color)
             }
 
             VStack(alignment: .leading, spacing: 5) {
@@ -38,7 +38,7 @@ struct DiagnosisCardView: View {
                         .font(.caption2.weight(.medium))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
-                        .background(crop.accentColor.opacity(0.12))
+                        .background(crop.accentColor.opacity(0.1))
                         .foregroundStyle(crop.accentColor)
                         .clipShape(Capsule())
                     }
@@ -47,7 +47,7 @@ struct DiagnosisCardView: View {
                         .font(.caption2.weight(.medium))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
-                        .background(diagnosis.severityLevel.color.opacity(0.12))
+                        .background(diagnosis.severityLevel.color.opacity(0.1))
                         .foregroundStyle(diagnosis.severityLevel.color)
                         .clipShape(Capsule())
                 }

@@ -26,8 +26,8 @@ struct DiagnosisResultView: View {
                 if result.isHealthy {
                     LinearGradient(
                         colors: [
-                            Color(red: 0.08, green: 0.35, blue: 0.12),
-                            Color(red: 0.15, green: 0.55, blue: 0.22)
+                            AppTheme.accent,
+                            AppTheme.accentLight
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -36,8 +36,8 @@ struct DiagnosisResultView: View {
                 } else {
                     LinearGradient(
                         colors: [
-                            result.severityLevel.color.opacity(0.2),
-                            result.severityLevel.color.opacity(0.05)
+                            result.severityLevel.color.opacity(0.15),
+                            result.severityLevel.color.opacity(0.04)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -81,7 +81,7 @@ struct DiagnosisResultView: View {
                             PremiumBadge(
                                 text: "Detectado: \(cropDetected)",
                                 icon: "eye.fill",
-                                color: .purple
+                                color: AppTheme.techIndigo
                             )
                         }
                     }
@@ -105,7 +105,7 @@ struct DiagnosisResultView: View {
         HStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(.white.opacity(0.15))
+                    .fill(.white.opacity(0.2))
                     .frame(width: 64, height: 64)
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 32))
@@ -119,7 +119,7 @@ struct DiagnosisResultView: View {
                     .foregroundStyle(.white)
                 Text("Nenhuma praga ou doença detectada")
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.white.opacity(0.85))
             }
             Spacer()
         }
@@ -190,7 +190,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Descrição",
                     icon: "doc.text.fill",
-                    color: AppTheme.brandGreen,
+                    color: AppTheme.accent,
                     isExpanded: expandedSections.contains("description"),
                     toggle: { toggleSection("description") }
                 ) {
@@ -204,7 +204,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Sintomas",
                     icon: "eye.fill",
-                    color: .red,
+                    color: AppTheme.coral,
                     isExpanded: expandedSections.contains("symptoms"),
                     toggle: { toggleSection("symptoms") }
                 ) {
@@ -216,7 +216,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Causas",
                     icon: "exclamationmark.triangle.fill",
-                    color: .orange,
+                    color: AppTheme.warmAmber,
                     isExpanded: expandedSections.contains("causes"),
                     toggle: { toggleSection("causes") }
                 ) {
@@ -254,7 +254,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Monitoramento",
                     icon: "binoculars.fill",
-                    color: .indigo,
+                    color: AppTheme.techIndigo,
                     isExpanded: expandedSections.contains("monitoring"),
                     toggle: { toggleSection("monitoring") }
                 ) {
@@ -266,7 +266,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Controle Cultural / MIP",
                     icon: "hand.raised.fill",
-                    color: Color(red: 0.55, green: 0.40, blue: 0.20),
+                    color: AppTheme.accent,
                     isExpanded: expandedSections.contains("cultural"),
                     toggle: { toggleSection("cultural") }
                 ) {
@@ -278,7 +278,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Controle Químico",
                     icon: "flask.fill",
-                    color: .blue,
+                    color: AppTheme.techBlue,
                     isExpanded: expandedSections.contains("chemical"),
                     toggle: { toggleSection("chemical") }
                 ) {
@@ -304,7 +304,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Controle Biológico",
                     icon: "ladybug.fill",
-                    color: Color(red: 0.18, green: 0.55, blue: 0.24),
+                    color: AppTheme.accentLight,
                     isExpanded: expandedSections.contains("biological"),
                     toggle: { toggleSection("biological") }
                 ) {
@@ -395,7 +395,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Resistência",
                     icon: "exclamationmark.shield.fill",
-                    color: .red,
+                    color: AppTheme.coral,
                     isExpanded: expandedSections.contains("resistance"),
                     toggle: { toggleSection("resistance") }
                 ) {
@@ -409,7 +409,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Impacto Econômico",
                     icon: "chart.line.downtrend.xyaxis",
-                    color: .red,
+                    color: AppTheme.coral,
                     isExpanded: expandedSections.contains("impact"),
                     toggle: { toggleSection("impact") }
                 ) {
@@ -423,7 +423,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Pragas Relacionadas",
                     icon: "link",
-                    color: .purple,
+                    color: AppTheme.techIndigo,
                     isExpanded: expandedSections.contains("related"),
                     toggle: { toggleSection("related") }
                 ) {
@@ -435,7 +435,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Estratégia MIP",
                     icon: "shield.lefthalf.filled",
-                    color: AppTheme.brandGreen,
+                    color: AppTheme.accent,
                     isExpanded: expandedSections.contains("mip"),
                     toggle: { toggleSection("mip") }
                 ) {
@@ -449,7 +449,7 @@ struct DiagnosisResultView: View {
                 CollapsibleSection(
                     title: "Nível de Ação",
                     icon: "speedometer",
-                    color: .orange,
+                    color: AppTheme.warmAmber,
                     isExpanded: expandedSections.contains("threshold"),
                     toggle: { toggleSection("threshold") }
                 ) {
@@ -473,7 +473,7 @@ struct DiagnosisResultView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: "arrow.triangle.branch")
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(AppTheme.techIndigo)
                 Text("Detecções Similares")
                     .font(.subheadline.weight(.bold))
             }
@@ -510,7 +510,7 @@ struct DiagnosisResultView: View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Detalhes da Análise", systemImage: "cpu.fill")
                 .font(.subheadline.weight(.bold))
-                .foregroundStyle(AppTheme.brandGreen)
+                .foregroundStyle(AppTheme.accent)
 
             Divider()
 
@@ -545,7 +545,7 @@ struct DiagnosisResultView: View {
             ForEach(items, id: \.self) { item in
                 HStack(alignment: .top, spacing: 10) {
                     Circle()
-                        .fill(AppTheme.brandGreen)
+                        .fill(AppTheme.accent)
                         .frame(width: 6, height: 6)
                         .padding(.top, 7)
                     Text(item)
@@ -557,8 +557,8 @@ struct DiagnosisResultView: View {
     }
 
     private func predictionColor(_ confidence: Double) -> Color {
-        if confidence >= 0.7 { return .red }
-        if confidence >= 0.4 { return .orange }
+        if confidence >= 0.7 { return AppTheme.coral }
+        if confidence >= 0.4 { return AppTheme.warmAmber }
         return .gray
     }
 
@@ -577,8 +577,8 @@ struct ConfidenceBar: View {
     let value: Double
 
     private var barColor: Color {
-        if value >= 0.7 { return .red }
-        if value >= 0.4 { return .orange }
+        if value >= 0.7 { return AppTheme.coral }
+        if value >= 0.4 { return AppTheme.warmAmber }
         return .gray
     }
 

@@ -13,7 +13,7 @@ struct DiagnosisLoadingView: View {
                 ForEach(0..<3, id: \.self) { i in
                     Circle()
                         .stroke(
-                            AppTheme.brandGreen.opacity(0.15 - Double(i) * 0.04),
+                            AppTheme.accent.opacity(0.12 - Double(i) * 0.03),
                             lineWidth: 2
                         )
                         .frame(width: CGFloat(140 + i * 30), height: CGFloat(140 + i * 30))
@@ -34,7 +34,7 @@ struct DiagnosisLoadingView: View {
                     .trim(from: 0, to: viewModel.progress)
                     .stroke(
                         AngularGradient(
-                            colors: [AppTheme.brandGreen.opacity(0.3), AppTheme.brandGreen],
+                            colors: [AppTheme.accent.opacity(0.3), AppTheme.accent],
                             center: .center
                         ),
                         style: StrokeStyle(lineWidth: 5, lineCap: .round)
@@ -47,7 +47,7 @@ struct DiagnosisLoadingView: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [AppTheme.brandGreen.opacity(0.15), .clear],
+                                colors: [AppTheme.accent.opacity(0.12), .clear],
                                 center: .center,
                                 startRadius: 0,
                                 endRadius: 40
@@ -57,7 +57,7 @@ struct DiagnosisLoadingView: View {
 
                     Image(systemName: "leaf.fill")
                         .font(.system(size: 32, weight: .medium))
-                        .foregroundStyle(AppTheme.brandGreen)
+                        .foregroundStyle(AppTheme.accent)
                         .rotationEffect(.degrees(rotationAngle))
                         .symbolEffect(.pulse, options: .repeating)
                 }
@@ -71,10 +71,10 @@ struct DiagnosisLoadingView: View {
 
                 Text("\(Int(viewModel.progress * 100))%")
                     .font(.system(.headline, design: .default, weight: .bold).monospacedDigit())
-                    .foregroundStyle(AppTheme.brandGreen)
+                    .foregroundStyle(AppTheme.accent)
 
                 ProgressView(value: viewModel.progress)
-                    .tint(AppTheme.brandGreen)
+                    .tint(AppTheme.accent)
                     .padding(.horizontal, 60)
             }
 

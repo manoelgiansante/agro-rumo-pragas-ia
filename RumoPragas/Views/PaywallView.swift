@@ -40,7 +40,7 @@ struct PaywallView: View {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [AppTheme.brandGold.opacity(0.2), .clear],
+                            colors: [AppTheme.warmAmber.opacity(0.18), .clear],
                             center: .center,
                             startRadius: 0,
                             endRadius: 60
@@ -52,13 +52,13 @@ struct PaywallView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [AppTheme.brandGold, AppTheme.brandGold.opacity(0.7)],
+                                colors: [AppTheme.warmAmber, AppTheme.warmAmber.opacity(0.75)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .frame(width: 72, height: 72)
-                        .shadow(color: AppTheme.brandGold.opacity(0.4), radius: 16, y: 6)
+                        .shadow(color: AppTheme.warmAmber.opacity(0.35), radius: 16, y: 6)
 
                     Image(systemName: "crown.fill")
                         .font(.system(size: 30))
@@ -98,7 +98,7 @@ struct PaywallView: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .background(AppTheme.brandGold)
+                            .background(AppTheme.warmAmber)
                             .clipShape(Capsule())
                         }
 
@@ -119,13 +119,9 @@ struct PaywallView: View {
                     .background(
                         Group {
                             if selectedPlan == plan {
-                                LinearGradient(
-                                    colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                                AppTheme.heroGradient
                             } else {
-                                Color(.secondarySystemGroupedBackground)
+                                LinearGradient(colors: [Color(.secondarySystemGroupedBackground)], startPoint: .top, endPoint: .bottom)
                             }
                         }
                     )
@@ -134,13 +130,13 @@ struct PaywallView: View {
                         RoundedRectangle(cornerRadius: 16)
                             .strokeBorder(
                                 selectedPlan == plan
-                                    ? AppTheme.brandGreen
+                                    ? AppTheme.accent
                                     : Color(.separator).opacity(0.5),
                                 lineWidth: selectedPlan == plan ? 2 : 1
                             )
                     )
                     .shadow(
-                        color: selectedPlan == plan ? AppTheme.brandGreen.opacity(0.3) : .clear,
+                        color: selectedPlan == plan ? AppTheme.accent.opacity(0.25) : .clear,
                         radius: 12, y: 6
                     )
                 }
@@ -153,7 +149,7 @@ struct PaywallView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.seal.fill")
-                    .foregroundStyle(AppTheme.brandGreen)
+                    .foregroundStyle(AppTheme.accent)
                 Text("Recursos incluídos")
                     .font(.headline)
             }
@@ -162,11 +158,11 @@ struct PaywallView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(AppTheme.brandGreen.opacity(0.12))
+                            .fill(AppTheme.accent.opacity(0.12))
                             .frame(width: 24, height: 24)
                         Image(systemName: "checkmark")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(AppTheme.brandGreen)
+                            .foregroundStyle(AppTheme.accent)
                     }
                     Text(feature)
                         .font(.subheadline)
@@ -187,9 +183,9 @@ struct PaywallView: View {
                     .frame(height: 54)
             }
             .buttonStyle(.borderedProminent)
-            .tint(AppTheme.brandGreen)
+            .tint(AppTheme.accent)
             .clipShape(.rect(cornerRadius: 14))
-            .shadow(color: AppTheme.brandGreen.opacity(0.3), radius: 12, y: 6)
+            .shadow(color: AppTheme.accent.opacity(0.25), radius: 12, y: 6)
 
             Text("Cancele a qualquer momento. Sem compromisso.")
                 .font(.caption2)

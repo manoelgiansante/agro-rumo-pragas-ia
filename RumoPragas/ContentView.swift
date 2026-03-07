@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var authVM = AuthViewModel()
-    @AppStorage("prefersDarkMode") private var prefersDarkMode = true
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     var body: some View {
@@ -19,7 +18,6 @@ struct ContentView: View {
                 AuthView(viewModel: authVM)
             }
         }
-        .preferredColorScheme(prefersDarkMode ? .dark : .light)
         .task {
             await authVM.validateSession()
         }

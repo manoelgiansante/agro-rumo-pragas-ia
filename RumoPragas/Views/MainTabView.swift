@@ -26,6 +26,6 @@ struct MainTabView: View {
                 SettingsView(authVM: authVM)
             }
         }
-        .tint(AppTheme.brandGreen)
+        .tint(AppTheme.accent)
     }
 }

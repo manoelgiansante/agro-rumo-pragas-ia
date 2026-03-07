@@ -143,8 +143,8 @@ struct DiagnosisRowView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                diagnosis.severityLevel.color.opacity(0.18),
-                                diagnosis.severityLevel.color.opacity(0.06)
+                                diagnosis.severityLevel.color.opacity(0.15),
+                                diagnosis.severityLevel.color.opacity(0.05)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -153,7 +153,7 @@ struct DiagnosisRowView: View {
                     .frame(width: 48, height: 48)
                 Image(systemName: diagnosis.isHealthy ? "checkmark.circle.fill" : diagnosis.severityLevel.icon)
                     .font(.title3)
-                    .foregroundStyle(diagnosis.isHealthy ? .green : diagnosis.severityLevel.color)
+                    .foregroundStyle(diagnosis.isHealthy ? AppTheme.accent : diagnosis.severityLevel.color)
             }
 
             VStack(alignment: .leading, spacing: 4) {

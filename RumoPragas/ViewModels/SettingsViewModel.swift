@@ -9,7 +9,7 @@ class SettingsViewModel {
     var userCrops: [String] = []
     var userCity = ""
     var userState = ""
-    var isDarkMode = true
+    var isDarkMode = false
     var language = "pt"
     var pushEnabled = true
     var currentPlan: SubscriptionPlan = .free

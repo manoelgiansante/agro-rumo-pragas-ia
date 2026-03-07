@@ -32,17 +32,11 @@ struct MonitoringView: View {
             HStack(spacing: 14) {
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [.orange.opacity(0.3), .yellow.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(AppTheme.warmAmber.opacity(0.15))
                         .frame(width: 56, height: 56)
                     Image(systemName: w.icon)
                         .font(.title2)
-                        .foregroundStyle(.yellow)
+                        .foregroundStyle(AppTheme.warmAmber)
                         .symbolEffect(.pulse, options: .repeating.speed(0.5))
                 }
 
@@ -67,7 +61,7 @@ struct MonitoringView: View {
             HStack(spacing: 0) {
                 weatherMetric(icon: "humidity.fill", value: "\(Int(w.humidity))%", label: "Umidade", color: .cyan)
                 Spacer()
-                weatherMetric(icon: "cloud.rain.fill", value: String(format: "%.1f mm", w.dailyPrecipitation), label: "Chuva Hoje", color: .blue)
+                weatherMetric(icon: "cloud.rain.fill", value: String(format: "%.1f mm", w.dailyPrecipitation), label: "Chuva Hoje", color: AppTheme.techBlue)
                 Spacer()
                 weatherMetric(icon: "wind", value: String(format: "%.0f km/h", w.windSpeed), label: "Vento", color: .teal)
             }
@@ -75,9 +69,9 @@ struct MonitoringView: View {
             Divider()
 
             HStack(spacing: 0) {
-                weatherMetric(icon: "thermometer.variable", value: "\(Int(w.apparentTemperature))°C", label: "Sensação", color: .orange)
+                weatherMetric(icon: "thermometer.variable", value: "\(Int(w.apparentTemperature))°C", label: "Sensação", color: AppTheme.warmAmber)
                 Spacer()
-                weatherMetric(icon: "drop.fill", value: String(format: "%.1f mm", w.precipitation), label: "Última Hora", color: .indigo)
+                weatherMetric(icon: "drop.fill", value: String(format: "%.1f mm", w.precipitation), label: "Última Hora", color: AppTheme.techIndigo)
                 Spacer()
                 weatherMetric(icon: "exclamationmark.triangle.fill", value: riskLevel(w), label: "Risco", color: riskColor(w))
             }
@@ -112,7 +106,7 @@ struct MonitoringView: View {
                 riskRow(
                     title: "Doenças Fúngicas",
                     risk: w.humidity > 80 ? "Alto" : w.humidity > 60 ? "Médio" : "Baixo",
-                    color: w.humidity > 80 ? .red : w.humidity > 60 ? .orange : .green,
+                    color: w.humidity > 80 ? AppTheme.coral : w.humidity > 60 ? AppTheme.warmAmber : AppTheme.accent,
                     detail: w.humidity > 80 ? "Umidade alta favorece fungos. Monitore intensamente." : "Condições dentro do normal."
                 )
 
@@ -121,7 +115,7 @@ struct MonitoringView: View {
                 riskRow(
                     title: "Pragas de Solo",
                     risk: w.dailyPrecipitation > 20 ? "Alto" : w.dailyPrecipitation > 5 ? "Médio" : "Baixo",
-                    color: w.dailyPrecipitation > 20 ? .red : w.dailyPrecipitation > 5 ? .orange : .green,
+                    color: w.dailyPrecipitation > 20 ? AppTheme.coral : w.dailyPrecipitation > 5 ? AppTheme.warmAmber : AppTheme.accent,
                     detail: w.dailyPrecipitation > 20 ? "Chuva intensa favorece pragas de solo. Monitore com atenção." : w.dailyPrecipitation > 5 ? "Chuvas podem favorecer pragas de solo." : "Sem risco elevado no momento."
                 )
 
@@ -130,7 +124,7 @@ struct MonitoringView: View {
                 riskRow(
                     title: "Estresse Térmico",
                     risk: w.temperature > 35 ? "Alto" : w.temperature > 30 ? "Médio" : "Baixo",
-                    color: w.temperature > 35 ? .red : w.temperature > 30 ? .orange : .green,
+                    color: w.temperature > 35 ? AppTheme.coral : w.temperature > 30 ? AppTheme.warmAmber : AppTheme.accent,
                     detail: w.temperature > 35 ? "Temperatura muito alta. Plantas sob estresse." : "Temperatura adequada para a maioria das culturas."
                 )
             }
@@ -148,7 +142,7 @@ struct MonitoringView: View {
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(color.opacity(0.15))
+                    .background(color.opacity(0.12))
                     .foregroundStyle(color)
                     .clipShape(Capsule())
             }
@@ -162,7 +156,7 @@ struct MonitoringView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: "lightbulb.fill")
-                    .foregroundStyle(AppTheme.brandGold)
+                    .foregroundStyle(AppTheme.warmAmber)
                 Text("Recomendações")
                     .font(.subheadline.weight(.bold))
             }
@@ -179,20 +173,20 @@ struct MonitoringView: View {
                     recommendationItem(
                         icon: "thermometer.sun.fill",
                         text: "Temperatura alta: aumente a frequência de irrigação e monitore pragas sugadoras.",
-                        color: .red
+                        color: AppTheme.coral
                     )
                 }
                 if w.dailyPrecipitation > 10 {
                     recommendationItem(
                         icon: "cloud.rain.fill",
                         text: "Chuva acumulada de \(String(format: "%.0f", w.dailyPrecipitation)) mm hoje: evite aplicações de defensivos. Reavalie condições amanhã.",
-                        color: .blue
+                        color: AppTheme.techBlue
                     )
                 } else if w.precipitation > 3 {
                     recommendationItem(
                         icon: "cloud.rain.fill",
                         text: "Chuva recente: evite aplicações de defensivos nas próximas horas.",
-                        color: .blue
+                        color: AppTheme.techBlue
                     )
                 }
                 if w.windSpeed > 15 {
@@ -205,12 +199,12 @@ struct MonitoringView: View {
                 recommendationItem(
                     icon: "calendar.badge.clock",
                     text: "Realize amostragens semanais para detecção precoce de pragas.",
-                    color: AppTheme.brandGreen
+                    color: AppTheme.accent
                 )
                 recommendationItem(
                     icon: "leaf.fill",
                     text: "Priorize o Manejo Integrado de Pragas (MIP) para resultados sustentáveis.",
-                    color: Color(red: 0.18, green: 0.55, blue: 0.24)
+                    color: AppTheme.accentLight
                 )
             }
         }
@@ -236,8 +230,8 @@ struct MonitoringView: View {
     }
 
     private func riskColor(_ w: WeatherData) -> Color {
-        if w.humidity > 80 || w.temperature > 35 { return .red }
-        if w.humidity > 60 || w.temperature > 30 { return .orange }
-        return .green
+        if w.humidity > 80 || w.temperature > 35 { return AppTheme.coral }
+        if w.humidity > 60 || w.temperature > 30 { return AppTheme.warmAmber }
+        return AppTheme.accent
     }
 }

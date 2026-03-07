@@ -61,7 +61,7 @@ struct DiagnosisFlowView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "camera.viewfinder")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(AppTheme.brandGreen)
+                            .foregroundStyle(AppTheme.accent)
                         Text(toolbarTitle)
                             .font(.headline)
                     }
@@ -100,8 +100,6 @@ struct DiagnosisFlowView: View {
         }
     }
 
-    // MARK: - Step 1: Photo Selection
-
     private var photoSelectionStep: some View {
         ScrollView {
             VStack(spacing: 28) {
@@ -111,21 +109,21 @@ struct DiagnosisFlowView: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [AppTheme.brandGreen.opacity(0.15), AppTheme.brandGreen.opacity(0.03)],
+                                colors: [AppTheme.accent.opacity(0.12), AppTheme.accent.opacity(0.02)],
                                 center: .center,
                                 startRadius: 0,
                                 endRadius: 80
                             )
                         )
-                        .frame(width: 160, height: 160)
+                        .frame(width: 150, height: 150)
 
                     Circle()
-                        .strokeBorder(AppTheme.brandGreen.opacity(0.2), lineWidth: 2)
-                        .frame(width: 130, height: 130)
+                        .strokeBorder(AppTheme.accent.opacity(0.2), lineWidth: 2)
+                        .frame(width: 120, height: 120)
 
                     Image(systemName: "camera.viewfinder")
-                        .font(.system(size: 52, weight: .light))
-                        .foregroundStyle(AppTheme.brandGreen)
+                        .font(.system(size: 48, weight: .light))
+                        .foregroundStyle(AppTheme.accent)
                         .symbolEffect(.pulse, options: .repeating.speed(0.5))
                 }
                 .opacity(appeared ? 1 : 0)
@@ -151,14 +149,8 @@ struct DiagnosisFlowView: View {
                         HStack(spacing: 14) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 14)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .frame(width: 56, height: 56)
+                                    .fill(AppTheme.heroGradient)
+                                    .frame(width: 54, height: 54)
                                 Image(systemName: "camera.fill")
                                     .font(.title2)
                                     .foregroundStyle(.white)
@@ -186,12 +178,12 @@ struct DiagnosisFlowView: View {
                                 RoundedRectangle(cornerRadius: 14)
                                     .fill(
                                         LinearGradient(
-                                            colors: [.blue.opacity(0.8), .blue.opacity(0.6)],
+                                            colors: [AppTheme.techBlue, AppTheme.techBlue.opacity(0.75)],
                                             startPoint: .topLeading,
                                             endPoint: .bottomTrailing
                                         )
                                     )
-                                    .frame(width: 56, height: 56)
+                                    .frame(width: 54, height: 54)
                                 Image(systemName: "photo.on.rectangle.angled")
                                     .font(.title2)
                                     .foregroundStyle(.white)
@@ -219,13 +211,13 @@ struct DiagnosisFlowView: View {
                 VStack(spacing: 12) {
                     Label("Dicas para melhor resultado", systemImage: "lightbulb.fill")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(AppTheme.brandGold)
+                        .foregroundStyle(AppTheme.warmAmber)
 
                     VStack(alignment: .leading, spacing: 10) {
                         tipRow(icon: "sun.max.fill", color: .yellow, text: "Boa iluminação natural")
                         tipRow(icon: "arrow.up.left.and.arrow.down.right", color: .cyan, text: "Foco na área afetada, bem de perto")
-                        tipRow(icon: "leaf.fill", color: AppTheme.brandGreen, text: "Inclua folhas, caule ou fruto visíveis")
-                        tipRow(icon: "photo.stack", color: .purple, text: "Imagem nítida sem tremor")
+                        tipRow(icon: "leaf.fill", color: AppTheme.accent, text: "Inclua folhas, caule ou fruto visíveis")
+                        tipRow(icon: "photo.stack", color: AppTheme.techIndigo, text: "Imagem nítida sem tremor")
                     }
                     .premiumCard(padding: 16)
                 }
@@ -235,7 +227,7 @@ struct DiagnosisFlowView: View {
 
                 Spacer().frame(height: 20)
             }
-            .animation(.easeOut(duration: 0.6).delay(0.1), value: appeared)
+            .animation(.spring(response: 0.6, dampingFraction: 0.85).delay(0.1), value: appeared)
         }
     }
 
@@ -250,8 +242,6 @@ struct DiagnosisFlowView: View {
                 .foregroundStyle(.secondary)
         }
     }
-
-    // MARK: - Step 2: Crop Selection
 
     private var cropSelectionStep: some View {
         VStack(spacing: 0) {
@@ -277,7 +267,7 @@ struct DiagnosisFlowView: View {
                     Spacer()
                     Image(systemName: "checkmark.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(AppTheme.brandGreen)
+                        .foregroundStyle(AppTheme.accent)
                 }
                 .padding(16)
                 .background(Color(.secondarySystemGroupedBackground))
@@ -296,8 +286,6 @@ struct DiagnosisFlowView: View {
         }
     }
 
-    // MARK: - Step 3: Analyzing
-
     private var analyzingStep: some View {
         DiagnosisLoadingView(viewModel: diagnosisVM)
             .onChange(of: diagnosisVM.isAnalyzing) { _, isAnalyzing in
@@ -311,8 +299,6 @@ struct DiagnosisFlowView: View {
             }
     }
 
-    // MARK: - Step 4: Result
-
     private var resultStep: some View {
         Group {
             if let result = diagnosisVM.result {
@@ -321,16 +307,12 @@ struct DiagnosisFlowView: View {
         }
     }
 
-    // MARK: - Error
-
     private var errorStep: some View {
         DiagnosisErrorView(message: diagnosisVM.errorMessage ?? "Erro desconhecido") {
             diagnosisVM.reset()
             withAnimation(.snappy) { flowStep = .photoSelection }
         }
     }
-
-    // MARK: - Helpers
 
     private func handleImageSelected(_ data: Data) {
         diagnosisVM.imageData = data

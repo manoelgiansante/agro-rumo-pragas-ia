@@ -22,13 +22,7 @@ struct AIChatView: View {
                     HStack(spacing: 8) {
                         ZStack {
                             Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
+                                .fill(AppTheme.techGradient)
                                 .frame(width: 28, height: 28)
                             Image(systemName: "sparkles")
                                 .font(.system(size: 13, weight: .bold))
@@ -63,7 +57,7 @@ struct AIChatView: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [AppTheme.brandGreen.opacity(0.15), .clear],
+                                colors: [AppTheme.accent.opacity(0.12), .clear],
                                 center: .center,
                                 startRadius: 0,
                                 endRadius: 70
@@ -73,15 +67,9 @@ struct AIChatView: View {
 
                     ZStack {
                         Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
+                            .fill(AppTheme.techGradient)
                             .frame(width: 80, height: 80)
-                            .shadow(color: AppTheme.brandGreen.opacity(0.4), radius: 20, y: 8)
+                            .shadow(color: AppTheme.accent.opacity(0.3), radius: 20, y: 8)
 
                         Image(systemName: "sparkles")
                             .font(.system(size: 34, weight: .medium))
@@ -114,7 +102,7 @@ struct AIChatView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "leaf.fill")
                                     .font(.caption)
-                                    .foregroundStyle(AppTheme.brandGreen)
+                                    .foregroundStyle(AppTheme.accent)
 
                                 Text(suggestion)
                                     .font(.subheadline)
@@ -226,11 +214,7 @@ struct SendButton: View {
                 .background(
                     Circle().fill(
                         canSend
-                            ? AnyShapeStyle(LinearGradient(
-                                colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ))
+                            ? AnyShapeStyle(AppTheme.techGradient)
                             : AnyShapeStyle(Color(.tertiarySystemFill))
                     )
                 )
@@ -251,13 +235,7 @@ struct MessageBubbleView: View {
             if !isUser {
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(AppTheme.techGradient)
                         .frame(width: 30, height: 30)
 
                     Image(systemName: "sparkles")
@@ -276,11 +254,7 @@ struct MessageBubbleView: View {
                     .padding(.vertical, 10)
                     .background(
                         isUser
-                            ? AnyShapeStyle(LinearGradient(
-                                colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ))
+                            ? AnyShapeStyle(AppTheme.heroGradient)
                             : AnyShapeStyle(Color(.secondarySystemGroupedBackground))
                     )
                     .clipShape(
@@ -311,13 +285,7 @@ struct TypingIndicatorView: View {
         HStack(alignment: .top, spacing: 8) {
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(AppTheme.techGradient)
                     .frame(width: 30, height: 30)
 
                 Image(systemName: "sparkles")
@@ -329,7 +297,7 @@ struct TypingIndicatorView: View {
             HStack(spacing: 5) {
                 ForEach(0..<3, id: \.self) { index in
                     Circle()
-                        .fill(AppTheme.brandGreen.opacity(0.6))
+                        .fill(AppTheme.accent.opacity(0.6))
                         .frame(width: 7, height: 7)
                         .offset(y: dotPhase == Double(index) ? -4 : 0)
                 }
@@ -357,7 +325,7 @@ struct ErrorBubbleView: View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(AppTheme.warmAmber)
             Text(message)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -365,7 +333,7 @@ struct ErrorBubbleView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
-        .background(Color.orange.opacity(0.08))
+        .background(AppTheme.warmAmber.opacity(0.08))
         .clipShape(.rect(cornerRadius: 12))
         .padding(.horizontal, 4)
     }

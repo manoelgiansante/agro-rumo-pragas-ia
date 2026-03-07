@@ -43,6 +43,7 @@ struct EditProfileSheet: View {
                                 }
                             }
                         ))
+                        .tint(AppTheme.accent)
                     }
                 }
             }

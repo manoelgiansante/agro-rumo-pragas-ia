@@ -32,15 +32,9 @@ struct SettingsView: View {
             HStack(spacing: 16) {
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(AppTheme.heroGradient)
                         .frame(width: 60, height: 60)
-                        .shadow(color: AppTheme.brandGreen.opacity(0.3), radius: 8, y: 4)
+                        .shadow(color: AppTheme.accent.opacity(0.25), radius: 8, y: 4)
                     Text(String(viewModel.userName.prefix(1)).uppercased())
                         .font(.title2.bold())
                         .foregroundStyle(.white)
@@ -58,7 +52,7 @@ struct SettingsView: View {
                         Text(roleDisplayName(viewModel.userRole))
                             .font(.caption2.weight(.semibold))
                     }
-                    .foregroundStyle(AppTheme.brandGreen)
+                    .foregroundStyle(AppTheme.accent)
                 }
 
                 Spacer()
@@ -80,18 +74,18 @@ struct SettingsView: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(AppTheme.brandGold.opacity(0.15))
+                        .fill(AppTheme.warmAmber.opacity(0.15))
                         .frame(width: 32, height: 32)
                     Image(systemName: "crown.fill")
                         .font(.subheadline)
-                        .foregroundStyle(AppTheme.brandGold)
+                        .foregroundStyle(AppTheme.warmAmber)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Plano Atual")
                         .font(.subheadline)
                     Text(viewModel.currentPlan.displayName)
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(AppTheme.brandGreen)
+                        .foregroundStyle(AppTheme.accent)
                 }
                 Spacer()
                 Text(viewModel.currentPlan.price)
@@ -120,7 +114,7 @@ struct SettingsView: View {
             Toggle(isOn: $viewModel.isDarkMode) {
                 Label("Modo Escuro", systemImage: "moon.fill")
             }
-            .tint(AppTheme.brandGreen)
+            .tint(AppTheme.accent)
 
             Picker(selection: $viewModel.language) {
                 Text("Português").tag("pt")
@@ -132,7 +126,7 @@ struct SettingsView: View {
             Toggle(isOn: $viewModel.pushEnabled) {
                 Label("Notificações Push", systemImage: "bell.badge.fill")
             }
-            .tint(AppTheme.brandGreen)
+            .tint(AppTheme.accent)
         } header: {
             Text("Aparência e Preferências")
         }

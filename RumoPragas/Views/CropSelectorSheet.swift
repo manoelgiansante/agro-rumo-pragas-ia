@@ -24,7 +24,7 @@ struct CropSelectorSheet: View {
             VStack(spacing: 6) {
                 Image(systemName: "leaf.circle.fill")
                     .font(.title)
-                    .foregroundStyle(AppTheme.brandGreen)
+                    .foregroundStyle(AppTheme.accent)
                     .symbolEffect(.bounce, options: .nonRepeating)
                 Text("Qual cultura está afetada?")
                     .font(.title3.bold())
@@ -58,10 +58,10 @@ struct CropSelectorSheet: View {
                                         .fill(
                                             selectedCrop == crop
                                                 ? LinearGradient(colors: [crop.accentColor, crop.accentColor.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                                                : LinearGradient(colors: [crop.accentColor.opacity(0.15), crop.accentColor.opacity(0.06)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                                : LinearGradient(colors: [crop.accentColor.opacity(0.12), crop.accentColor.opacity(0.05)], startPoint: .topLeading, endPoint: .bottomTrailing)
                                         )
                                         .frame(width: 48, height: 48)
-                                        .shadow(color: selectedCrop == crop ? crop.accentColor.opacity(0.3) : .clear, radius: 6, y: 3)
+                                        .shadow(color: selectedCrop == crop ? crop.accentColor.opacity(0.25) : .clear, radius: 6, y: 3)
 
                                     Image(systemName: crop.icon)
                                         .font(.title3)
@@ -109,9 +109,9 @@ struct CropSelectorSheet: View {
                 .frame(height: 54)
             }
             .buttonStyle(.borderedProminent)
-            .tint(AppTheme.brandGreen)
+            .tint(AppTheme.accent)
             .clipShape(.rect(cornerRadius: 14))
-            .shadow(color: AppTheme.brandGreen.opacity(0.3), radius: 12, y: 6)
+            .shadow(color: AppTheme.accent.opacity(0.25), radius: 10, y: 4)
             .padding(.horizontal)
             .padding(.bottom, 8)
         }

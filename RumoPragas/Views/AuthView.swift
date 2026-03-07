@@ -2,7 +2,6 @@ import SwiftUI
 
 struct AuthView: View {
     @Bindable var viewModel: AuthViewModel
-    @State private var animateGradient = false
     @State private var appeared = false
 
     var body: some View {
@@ -26,14 +25,14 @@ struct AuthView: View {
         ZStack(alignment: .bottomLeading) {
             ZStack {
                 AppTheme.meshBackground
-                    .frame(height: 320)
+                    .frame(height: 310)
 
                 VStack(spacing: 0) {
                     Spacer()
                     LinearGradient(
                         stops: [
                             .init(color: .clear, location: 0),
-                            .init(color: Color(.systemBackground).opacity(0.6), location: 0.7),
+                            .init(color: Color(.systemBackground).opacity(0.7), location: 0.7),
                             .init(color: Color(.systemBackground), location: 1.0)
                         ],
                         startPoint: .top,
@@ -42,16 +41,13 @@ struct AuthView: View {
                     .frame(height: 120)
                 }
             }
-            .frame(height: 320)
+            .frame(height: 310)
 
             VStack(alignment: .leading, spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(.white.opacity(0.1))
-                        .frame(width: 72, height: 72)
-                    Circle()
-                        .fill(.white.opacity(0.06))
-                        .frame(width: 56, height: 56)
+                        .fill(.white.opacity(0.15))
+                        .frame(width: 68, height: 68)
                     Image(systemName: "leaf.fill")
                         .font(.system(size: 28, weight: .medium))
                         .foregroundStyle(.white)
@@ -67,7 +63,7 @@ struct AuthView: View {
 
                     Text("Inteligência artificial para\nproteção de lavouras")
                         .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.white.opacity(0.75))
                         .lineSpacing(2)
                 }
                 .opacity(appeared ? 1 : 0)
@@ -76,7 +72,7 @@ struct AuthView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }
-        .frame(height: 320)
+        .frame(height: 310)
     }
 
     private var formSection: some View {
@@ -122,11 +118,11 @@ struct AuthView: View {
             if let error = viewModel.errorMessage {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(AppTheme.coral)
                         .font(.caption)
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(AppTheme.coral)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
@@ -155,10 +151,10 @@ struct AuthView: View {
                 .frame(height: 54)
             }
             .buttonStyle(.borderedProminent)
-            .tint(AppTheme.brandGreen)
+            .tint(AppTheme.accent)
             .clipShape(.rect(cornerRadius: 14))
             .disabled(viewModel.isLoading)
-            .shadow(color: AppTheme.brandGreen.opacity(0.3), radius: 12, y: 6)
+            .shadow(color: AppTheme.accent.opacity(0.25), radius: 12, y: 6)
 
             VStack(spacing: 8) {
                 Text("Ao continuar, você concorda com nossos")

@@ -29,7 +29,7 @@ struct LibraryView: View {
                 CropCategoryChip(
                     icon: "square.grid.2x2.fill",
                     name: "Todos",
-                    color: .blue,
+                    color: AppTheme.techBlue,
                     isSelected: viewModel.selectedCrop == nil,
                     count: nil
                 ) {
@@ -95,10 +95,10 @@ struct CropCategoryChip: View {
                             .fill(
                                 isSelected
                                     ? LinearGradient(colors: [color, color.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                                    : LinearGradient(colors: [color.opacity(0.15), color.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                    : LinearGradient(colors: [color.opacity(0.12), color.opacity(0.06)], startPoint: .topLeading, endPoint: .bottomTrailing)
                             )
                             .frame(width: 52, height: 52)
-                            .shadow(color: isSelected ? color.opacity(0.3) : .clear, radius: 8, y: 4)
+                            .shadow(color: isSelected ? color.opacity(0.25) : .clear, radius: 8, y: 4)
 
                         Image(systemName: icon)
                             .font(.title3)
@@ -137,7 +137,7 @@ struct PestCardView: View {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(
                         LinearGradient(
-                            colors: [pest.severity.color.opacity(0.15), pest.severity.color.opacity(0.05)],
+                            colors: [pest.severity.color.opacity(0.12), pest.severity.color.opacity(0.04)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -168,7 +168,7 @@ struct PestCardView: View {
                         .font(.caption2.weight(.medium))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
-                        .background(crop.accentColor.opacity(0.12))
+                        .background(crop.accentColor.opacity(0.1))
                         .foregroundStyle(crop.accentColor)
                         .clipShape(Capsule())
                     }

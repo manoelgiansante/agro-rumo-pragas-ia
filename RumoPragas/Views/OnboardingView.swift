@@ -18,7 +18,7 @@ struct OnboardingView: View {
     private let pages: [OnboardingPage] = [
         OnboardingPage(
             icon: "camera.viewfinder",
-            iconColor: Color(red: 0.13, green: 0.54, blue: 0.26),
+            iconColor: AppTheme.accent,
             title: "Diagnóstico com IA",
             subtitle: "Tire uma foto da praga ou sintoma e receba identificação instantânea com inteligência artificial",
             features: [
@@ -27,13 +27,13 @@ struct OnboardingView: View {
                 (icon: "leaf.arrow.triangle.circlepath", text: "Tratamentos personalizados")
             ],
             backgroundColors: [
-                Color(red: 0.04, green: 0.16, blue: 0.07),
-                Color(red: 0.08, green: 0.32, blue: 0.14)
+                Color(red: 0.06, green: 0.42, blue: 0.30),
+                Color(red: 0.12, green: 0.62, blue: 0.46)
             ]
         ),
         OnboardingPage(
             icon: "list.clipboard.fill",
-            iconColor: Color(red: 0.20, green: 0.60, blue: 0.85),
+            iconColor: AppTheme.techBlue,
             title: "Histórico Completo",
             subtitle: "Acompanhe todas as suas análises em um só lugar, com filtros e busca inteligente",
             features: [
@@ -42,13 +42,13 @@ struct OnboardingView: View {
                 (icon: "star.fill", text: "Favoritos para acesso rápido")
             ],
             backgroundColors: [
-                Color(red: 0.04, green: 0.12, blue: 0.22),
-                Color(red: 0.10, green: 0.30, blue: 0.50)
+                Color(red: 0.14, green: 0.38, blue: 0.82),
+                Color(red: 0.22, green: 0.51, blue: 0.95)
             ]
         ),
         OnboardingPage(
             icon: "books.vertical.fill",
-            iconColor: Color(red: 0.80, green: 0.68, blue: 0.28),
+            iconColor: AppTheme.warmAmber,
             title: "Biblioteca de Pragas",
             subtitle: "Acesse informações detalhadas sobre pragas das principais culturas do Brasil",
             features: [
@@ -57,13 +57,13 @@ struct OnboardingView: View {
                 (icon: "cross.vial.fill", text: "Controle cultural, químico e biológico")
             ],
             backgroundColors: [
-                Color(red: 0.18, green: 0.14, blue: 0.04),
-                Color(red: 0.38, green: 0.30, blue: 0.10)
+                Color(red: 0.78, green: 0.56, blue: 0.10),
+                Color(red: 0.92, green: 0.69, blue: 0.15)
             ]
         ),
         OnboardingPage(
             icon: "shield.checkered",
-            iconColor: Color(red: 0.13, green: 0.54, blue: 0.26),
+            iconColor: AppTheme.accent,
             title: "Proteja sua Lavoura",
             subtitle: "Tecnologia de ponta para o agronegócio brasileiro — do campo à tomada de decisão",
             features: [
@@ -72,15 +72,15 @@ struct OnboardingView: View {
                 (icon: "bell.badge.fill", text: "Alertas e prevenção")
             ],
             backgroundColors: [
-                Color(red: 0.04, green: 0.18, blue: 0.08),
-                Color(red: 0.13, green: 0.42, blue: 0.20)
+                Color(red: 0.08, green: 0.48, blue: 0.35),
+                Color(red: 0.16, green: 0.72, blue: 0.53)
             ]
         )
     ]
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(.systemBackground).ignoresSafeArea()
 
             TabView(selection: $currentPage) {
                 ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
@@ -108,7 +108,7 @@ struct OnboardingView: View {
             HStack(spacing: 8) {
                 ForEach(0..<pages.count, id: \.self) { index in
                     Capsule()
-                        .fill(index == currentPage ? Color.white : Color.white.opacity(0.3))
+                        .fill(index == currentPage ? Color.white : Color.white.opacity(0.35))
                         .frame(width: index == currentPage ? 24 : 8, height: 8)
                         .animation(.snappy(duration: 0.3), value: currentPage)
                 }
@@ -128,9 +128,10 @@ struct OnboardingView: View {
                     .frame(height: 56)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(AppTheme.brandGreen)
+                .tint(.white)
+                .foregroundStyle(AppTheme.accent)
                 .clipShape(.rect(cornerRadius: 16))
-                .shadow(color: AppTheme.brandGreen.opacity(0.4), radius: 16, y: 8)
+                .shadow(color: .white.opacity(0.25), radius: 16, y: 6)
                 .transition(.scale.combined(with: .opacity))
             } else {
                 HStack {
@@ -139,7 +140,7 @@ struct OnboardingView: View {
                     } label: {
                         Text("Pular")
                             .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.white.opacity(0.55))
                     }
 
                     Spacer()
@@ -158,7 +159,7 @@ struct OnboardingView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 14)
-                        .background(.white.opacity(0.15))
+                        .background(.white.opacity(0.18))
                         .clipShape(.rect(cornerRadius: 14))
                     }
                 }
@@ -231,19 +232,15 @@ struct OnboardingPageView: View {
     private var iconSection: some View {
         ZStack {
             Circle()
-                .fill(page.iconColor.opacity(0.15))
+                .fill(.white.opacity(0.08))
                 .frame(width: 140, height: 140)
 
             Circle()
-                .fill(page.iconColor.opacity(0.1))
-                .frame(width: 110, height: 110)
-
-            Circle()
-                .fill(page.iconColor.opacity(0.2))
-                .frame(width: 80, height: 80)
+                .fill(.white.opacity(0.12))
+                .frame(width: 100, height: 100)
 
             Image(systemName: page.icon)
-                .font(.system(size: 38, weight: .medium))
+                .font(.system(size: 42, weight: .medium))
                 .foregroundStyle(.white)
                 .symbolEffect(.breathe, options: .repeating.speed(0.4))
         }
@@ -258,7 +255,7 @@ struct OnboardingPageView: View {
 
             Text(page.subtitle)
                 .font(.body)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.white.opacity(0.75))
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
@@ -266,28 +263,28 @@ struct OnboardingPageView: View {
     }
 
     private var featuresSection: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             ForEach(Array(page.features.enumerated()), id: \.offset) { index, feature in
                 HStack(spacing: 14) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(.white.opacity(0.1))
+                            .fill(.white.opacity(0.12))
                             .frame(width: 40, height: 40)
 
                         Image(systemName: feature.icon)
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(page.iconColor)
+                            .foregroundStyle(.white)
                     }
 
                     Text(feature.text)
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(.white.opacity(0.9))
 
                     Spacer()
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(.white.opacity(0.06))
+                .background(.white.opacity(0.08))
                 .clipShape(.rect(cornerRadius: 14))
                 .animation(
                     .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.08),

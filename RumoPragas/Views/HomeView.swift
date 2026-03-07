@@ -23,7 +23,7 @@ struct HomeView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "leaf.fill")
                             .font(.headline)
-                            .foregroundStyle(AppTheme.brandGreen)
+                            .foregroundStyle(AppTheme.accent)
                         Text("Rumo Pragas")
                             .font(.headline.weight(.bold))
                     }
@@ -50,7 +50,7 @@ struct HomeView: View {
     private var heroHeader: some View {
         ZStack(alignment: .bottomLeading) {
             AppTheme.meshBackground
-                .frame(height: 200)
+                .frame(height: 190)
 
             LinearGradient(
                 stops: [
@@ -63,46 +63,46 @@ struct HomeView: View {
             .frame(height: 80)
             .frame(maxHeight: .infinity, alignment: .bottom)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(greetingText)
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.white.opacity(0.75))
                 Text(authVM.currentUser?.userMetadata?.fullName ?? "Produtor")
                     .font(.title.bold())
                     .foregroundStyle(.white)
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .padding(.bottom, 20)
         }
-        .frame(height: 200)
+        .frame(height: 190)
     }
 
     private var mainContent: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             weatherCard
                 .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 16)
+                .offset(y: appeared ? 0 : 14)
 
             scanButton
                 .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 20)
+                .offset(y: appeared ? 0 : 18)
 
             statsRow
                 .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 24)
+                .offset(y: appeared ? 0 : 22)
 
             recentDiagnosisSection
                 .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 28)
+                .offset(y: appeared ? 0 : 26)
 
             tipsSection
                 .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 32)
+                .offset(y: appeared ? 0 : 30)
         }
         .padding(.horizontal, 16)
-        .padding(.top, -20)
-        .padding(.bottom, 40)
-        .animation(.easeOut(duration: 0.7).delay(0.1), value: appeared)
+        .padding(.top, -16)
+        .padding(.bottom, 32)
+        .animation(.spring(response: 0.6, dampingFraction: 0.85).delay(0.1), value: appeared)
     }
 
     private var weatherCard: some View {
@@ -112,26 +112,20 @@ struct HomeView: View {
                     HStack(spacing: 14) {
                         ZStack {
                             Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [.orange.opacity(0.3), .yellow.opacity(0.2)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: 52, height: 52)
+                                .fill(AppTheme.warmAmber.opacity(0.15))
+                                .frame(width: 50, height: 50)
                             Image(systemName: weather.icon)
-                                .font(.title2)
-                                .foregroundStyle(.yellow)
+                                .font(.title3)
+                                .foregroundStyle(AppTheme.warmAmber)
                                 .symbolEffect(.pulse, options: .repeating.speed(0.5))
                         }
 
-                        VStack(alignment: .leading, spacing: 3) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text(weather.location)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Text("\(Int(weather.temperature))°C")
-                                .font(.system(.title, design: .default, weight: .bold))
+                                .font(.system(.title2, design: .default, weight: .bold))
                             Text(weather.description.capitalized)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -141,34 +135,16 @@ struct HomeView: View {
                     Spacer()
 
                     VStack(alignment: .trailing, spacing: 8) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "humidity.fill")
-                                .font(.caption)
-                                .foregroundStyle(.cyan)
-                            Text("\(Int(weather.humidity))%")
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                        }
-                        HStack(spacing: 6) {
-                            Image(systemName: "cloud.rain.fill")
-                                .font(.caption)
-                                .foregroundStyle(.blue)
-                            Text(String(format: "%.1f mm", weather.dailyPrecipitation))
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                        }
-                        HStack(spacing: 6) {
-                            Image(systemName: "wind")
-                                .font(.caption)
-                                .foregroundStyle(.teal)
-                            Text(String(format: "%.0f km/h", weather.windSpeed))
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                        }
+                        weatherMetricSmall(icon: "humidity.fill", value: "\(Int(weather.humidity))%", color: .cyan)
+                        weatherMetricSmall(icon: "cloud.rain.fill", value: String(format: "%.1f mm", weather.dailyPrecipitation), color: AppTheme.techBlue)
+                        weatherMetricSmall(icon: "wind", value: String(format: "%.0f km/h", weather.windSpeed), color: .teal)
                     }
                 }
                 .premiumCard()
             } else if viewModel.isLoadingWeather {
                 HStack(spacing: 12) {
                     ProgressView()
-                    Text("Carregando condições climáticas...")
+                    Text("Carregando clima...")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -178,25 +154,29 @@ struct HomeView: View {
         }
     }
 
+    private func weatherMetricSmall(icon: String, value: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(color)
+            Text(value)
+                .font(.caption.weight(.semibold).monospacedDigit())
+        }
+    }
+
     private var scanButton: some View {
         Button {
             showDiagnosisFlow = true
         } label: {
             HStack(spacing: 16) {
                 ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [AppTheme.brandGreen, AppTheme.brandDarkGreen],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 64, height: 64)
-                        .shadow(color: AppTheme.brandGreen.opacity(0.4), radius: 12, y: 4)
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(AppTheme.heroGradient)
+                        .frame(width: 60, height: 60)
+                        .shadow(color: AppTheme.accent.opacity(0.35), radius: 10, y: 4)
 
                     Image(systemName: "camera.viewfinder")
-                        .font(.system(size: 28, weight: .medium))
+                        .font(.system(size: 26, weight: .medium))
                         .foregroundStyle(.white)
                 }
 
@@ -215,7 +195,7 @@ struct HomeView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
-            .premiumCard(padding: 20)
+            .premiumCard(padding: 18)
         }
         .sensoryFeedback(.impact(weight: .light), trigger: showDiagnosisFlow)
     }
@@ -229,7 +209,7 @@ struct HomeView: View {
                     icon: "doc.text.magnifyingglass",
                     value: "—",
                     label: "Diagnósticos",
-                    color: AppTheme.brandGreen
+                    color: AppTheme.accent
                 )
             }
             .buttonStyle(.plain)
@@ -241,7 +221,7 @@ struct HomeView: View {
                     icon: "shield.checkered",
                     value: "MIP",
                     label: "Estratégia",
-                    color: .cyan
+                    color: AppTheme.techBlue
                 )
             }
             .buttonStyle(.plain)
@@ -253,7 +233,7 @@ struct HomeView: View {
                     icon: "chart.line.uptrend.xyaxis",
                     value: "—",
                     label: "Monitoramento",
-                    color: .orange
+                    color: AppTheme.warmAmber
                 )
             }
             .buttonStyle(.plain)
@@ -286,21 +266,15 @@ struct HomeView: View {
                 Spacer()
                 Image(systemName: "lightbulb.fill")
                     .font(.caption)
-                    .foregroundStyle(AppTheme.brandGold)
+                    .foregroundStyle(AppTheme.warmAmber)
             }
 
-            ForEach(Array(viewModel.tips.enumerated()), id: \.element.id) { index, tip in
+            ForEach(Array(viewModel.tips.enumerated()), id: \.element.id) { _, tip in
                 HStack(spacing: 14) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(
-                                LinearGradient(
-                                    colors: [tip.color.opacity(0.2), tip.color.opacity(0.08)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 44, height: 44)
+                            .fill(tip.color.opacity(0.12))
+                            .frame(width: 42, height: 42)
                         Image(systemName: tip.icon)
                             .font(.body.weight(.semibold))
                             .foregroundStyle(tip.color)
@@ -328,7 +302,6 @@ struct HomeView: View {
         if hour < 18 { return "Boa tarde" }
         return "Boa noite"
     }
-
 }
 
 struct StatMiniCard: View {
@@ -364,11 +337,11 @@ struct DiagnosisErrorView: View {
 
             ZStack {
                 Circle()
-                    .fill(.orange.opacity(0.12))
+                    .fill(AppTheme.coral.opacity(0.12))
                     .frame(width: 100, height: 100)
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(AppTheme.coral)
                     .symbolEffect(.bounce, options: .nonRepeating)
             }
 
@@ -393,7 +366,7 @@ struct DiagnosisErrorView: View {
                     .frame(height: 52)
             }
             .buttonStyle(.borderedProminent)
-            .tint(AppTheme.brandGreen)
+            .tint(AppTheme.accent)
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }

@@ -5,7 +5,7 @@
 
 A beautiful native iOS app for Brazilian farmers and agronomists to identify and manage crop pests using AI. Take a photo of a pest or symptom, get instant AI-powered identification with treatment recommendations, track your diagnosis history, and browse a comprehensive pest library.
 
-The design uses a rich green/earth-tone palette inspired by agriculture, with a dark theme as default for field use (bright sun readability). Clean, professional layout following Apple's design language.
+The design uses a modern tech-agricultural palette — vibrant emerald green (#1A966B) with tech blue (#3882F2) accents, light theme as default. Clean, professional, and technological feel following Apple's design language.
 
 ---
 
@@ -50,7 +50,7 @@ The design uses a rich green/earth-tone palette inspired by agriculture, with a 
 
 ## Design
 
-- **Theme:** Dark mode default with rich agricultural green accents (`#2D7A3A`) — feels professional and works well in bright outdoor conditions
+- **Theme:** Light mode default with vibrant emerald accent (#1A966B) + tech blue (#3882F2) — modern, clean, technological feel with MeshGradient hero headers
 - **Typography:** SF Pro with varied weights — bold titles, medium body, light captions
 - **Cards:** Rounded cards with subtle shadows on grouped backgrounds
 - **Tab bar:** 4 tabs — Home (diagnosis), History, Library, Settings
