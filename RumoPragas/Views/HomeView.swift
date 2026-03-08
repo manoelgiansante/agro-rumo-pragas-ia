@@ -5,6 +5,7 @@ struct HomeView: View {
     @State private var appeared = false
     @State private var showDiagnosisFlow = false
     @State private var navigateToHistory = false
+    @State private var selectedDiagnosis: DiagnosisResult?
     @State private var navigateToMonitoring = false
     let authVM: AuthViewModel
 
@@ -33,7 +34,7 @@ struct HomeView: View {
                 DiagnosisFlowView(isPresented: $showDiagnosisFlow, authVM: authVM)
             }
             .navigationDestination(isPresented: $navigateToHistory) {
-                HistoryView(authVM: authVM)
+                HistoryView(authVM: authVM, embedded: true)
             }
             .navigationDestination(isPresented: $navigateToMonitoring) {
                 MonitoringView(weather: viewModel.weather)
@@ -261,8 +262,28 @@ struct HomeView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    DiagnosisCardView(diagnosis: recent)
+                    Button {
+                        selectedDiagnosis = recent
+                    } label: {
+                        DiagnosisCardView(diagnosis: recent)
+                    }
+                    .buttonStyle(.plain)
                 }
+            }
+        }
+        .sheet(item: $selectedDiagnosis) { diagnosis in
+            NavigationStack {
+                DiagnosisResultView(result: diagnosis)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .principal) {
+                            Text("Resultado")
+                                .font(.headline)
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Fechar") { selectedDiagnosis = nil }
+                        }
+                    }
             }
         }
     }

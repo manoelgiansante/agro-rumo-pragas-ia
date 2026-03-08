@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var viewModel = SettingsViewModel()
+    @State private var showSignOutConfirmation = false
     let authVM: AuthViewModel
 
     var body: some View {
@@ -169,7 +170,7 @@ struct SettingsView: View {
     private var signOutSection: some View {
         Section {
             Button(role: .destructive) {
-                authVM.signOut()
+                showSignOutConfirmation = true
             } label: {
                 HStack {
                     Spacer()
@@ -177,6 +178,12 @@ struct SettingsView: View {
                         .font(.subheadline.weight(.semibold))
                     Spacer()
                 }
+            }
+            .confirmationDialog("Tem certeza que deseja sair?", isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
+                Button("Sair", role: .destructive) {
+                    authVM.signOut()
+                }
+                Button("Cancelar", role: .cancel) {}
             }
         }
     }

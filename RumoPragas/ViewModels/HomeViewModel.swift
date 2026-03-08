@@ -23,7 +23,7 @@ class HomeViewModel {
         isLoadingWeather = true
         locationService.requestPermissionAndLocation()
 
-        try? await Task.sleep(for: .seconds(2))
+        try? await Task.sleep(for: .seconds(0.5))
 
         let lat: Double
         let lon: Double

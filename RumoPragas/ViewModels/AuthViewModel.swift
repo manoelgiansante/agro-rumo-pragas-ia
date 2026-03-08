@@ -13,6 +13,10 @@ class AuthViewModel {
     var isAuthenticated = false
     var accessToken: String?
     var currentUser: SupabaseUser?
+    var showResetPassword = false
+    var resetEmail = ""
+    var resetMessage: String?
+    var isResetting = false
 
     private let accessTokenKey = "auth_access_token"
     private let refreshTokenKey = "auth_refresh_token"
@@ -95,6 +99,23 @@ class AuthViewModel {
             errorMessage = "Falha no cadastro. Tente novamente."
         }
         isLoading = false
+    }
+
+    func requestPasswordReset() async {
+        let emailToReset = resetEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !emailToReset.isEmpty else {
+            resetMessage = "Digite seu e-mail"
+            return
+        }
+        isResetting = true
+        resetMessage = nil
+        do {
+            try await SupabaseService.shared.resetPassword(email: emailToReset)
+            resetMessage = "E-mail de recuperação enviado! Verifique sua caixa de entrada."
+        } catch {
+            resetMessage = "Não foi possível enviar o e-mail. Verifique o endereço."
+        }
+        isResetting = false
     }
 
     func signOut() {

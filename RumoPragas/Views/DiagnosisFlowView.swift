@@ -44,6 +44,8 @@ struct DiagnosisFlowView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         if flowStep == .cropSelection {
+                            selectedPhoto = nil
+                            previewImage = nil
                             withAnimation(.snappy) { flowStep = .photoSelection }
                         } else {
                             isPresented = false
@@ -310,6 +312,8 @@ struct DiagnosisFlowView: View {
     private var errorStep: some View {
         DiagnosisErrorView(message: diagnosisVM.errorMessage ?? "Erro desconhecido") {
             diagnosisVM.reset()
+            selectedPhoto = nil
+            previewImage = nil
             withAnimation(.snappy) { flowStep = .photoSelection }
         }
     }

@@ -4,55 +4,15 @@ struct HistoryView: View {
     @State private var viewModel = HistoryViewModel()
     @State private var selectedDiagnosis: DiagnosisResult?
     let authVM: AuthViewModel
+    var embedded = false
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if viewModel.isLoading {
-                    loadingState
-                } else if viewModel.filteredDiagnoses.isEmpty {
-                    emptyState
-                } else {
-                    diagnosisList
-                }
-            }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("Histórico")
-            .searchable(text: $viewModel.searchText, prompt: "Buscar por praga...")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button {
-                            viewModel.selectedCropFilter = nil
-                        } label: {
-                            Label("Todos", systemImage: "square.grid.2x2")
-                        }
-                        ForEach(CropType.allCases) { crop in
-                            Button {
-                                viewModel.selectedCropFilter = crop
-                            } label: {
-                                Label(crop.displayName, systemImage: crop.icon)
-                            }
-                        }
-                    } label: {
-                        Image(systemName: viewModel.selectedCropFilter != nil ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                            .symbolRenderingMode(.hierarchical)
-                    }
-                }
-            }
-            .sheet(item: $selectedDiagnosis) { diagnosis in
+        Group {
+            if embedded {
+                historyContent
+            } else {
                 NavigationStack {
-                    DiagnosisResultView(result: diagnosis)
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .principal) {
-                                Text("Resultado")
-                                    .font(.headline)
-                            }
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("Fechar") { selectedDiagnosis = nil }
-                            }
-                        }
+                    historyContent
                 }
             }
         }
@@ -67,6 +27,62 @@ struct HistoryView: View {
                 token: authVM.accessToken,
                 userId: authVM.currentUser?.id
             )
+        }
+    }
+
+    private var historyContent: some View {
+        Group {
+            if viewModel.isLoading {
+                loadingState
+            } else if viewModel.filteredDiagnoses.isEmpty {
+                emptyState
+            } else {
+                diagnosisList
+            }
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Histórico")
+        .searchable(text: $viewModel.searchText, prompt: "Buscar por praga...")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        viewModel.selectedCropFilter = nil
+                    } label: {
+                        Label("Todos", systemImage: "square.grid.2x2")
+                    }
+                    ForEach(CropType.allCases) { crop in
+                        Button {
+                            viewModel.selectedCropFilter = crop
+                        } label: {
+                            Label(crop.displayName, systemImage: crop.icon)
+                        }
+                    }
+                } label: {
+                    Image(systemName: viewModel.selectedCropFilter != nil ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                        .symbolRenderingMode(.hierarchical)
+                }
+            }
+        }
+        .sheet(item: $selectedDiagnosis) { diagnosis in
+            NavigationStack {
+                DiagnosisResultView(result: diagnosis)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .principal) {
+                            Text("Resultado")
+                                .font(.headline)
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Fechar") { selectedDiagnosis = nil }
+                        }
+                    }
+            }
+        }
+        .alert("Erro", isPresented: $viewModel.showDeleteError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.deleteError ?? "Erro desconhecido")
         }
     }
 

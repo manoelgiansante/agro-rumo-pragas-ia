@@ -156,6 +156,19 @@ struct AuthView: View {
             .disabled(viewModel.isLoading)
             .shadow(color: AppTheme.accent.opacity(0.25), radius: 12, y: 6)
 
+            if !viewModel.isSignUp {
+                Button {
+                    viewModel.resetEmail = viewModel.email
+                    viewModel.resetMessage = nil
+                    viewModel.showResetPassword = true
+                } label: {
+                    Text("Esqueceu sua senha?")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(AppTheme.accent)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
             VStack(spacing: 8) {
                 Text("Ao continuar, você concorda com nossos")
                     .font(.caption2)
@@ -175,6 +188,91 @@ struct AuthView: View {
             Spacer(minLength: 40)
         }
         .padding(.horizontal, 24)
+        .sheet(isPresented: $viewModel.showResetPassword) {
+            ResetPasswordSheet(viewModel: viewModel)
+        }
+    }
+}
+
+struct ResetPasswordSheet: View {
+    @Bindable var viewModel: AuthViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                VStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(AppTheme.accent.opacity(0.12))
+                            .frame(width: 80, height: 80)
+                        Image(systemName: "envelope.badge.fill")
+                            .font(.system(size: 34))
+                            .foregroundStyle(AppTheme.accent)
+                    }
+
+                    Text("Recuperar Senha")
+                        .font(.title2.bold())
+                    Text("Digite seu e-mail para receber um link de recuperação de senha.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, 20)
+
+                PremiumTextField(
+                    icon: "envelope.fill",
+                    placeholder: "E-mail",
+                    text: $viewModel.resetEmail
+                )
+                .textContentType(.emailAddress)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding(.horizontal, 24)
+
+                if let msg = viewModel.resetMessage {
+                    HStack(spacing: 8) {
+                        Image(systemName: msg.contains("enviado") ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                            .font(.caption)
+                        Text(msg)
+                            .font(.footnote)
+                    }
+                    .foregroundStyle(msg.contains("enviado") ? AppTheme.accent : AppTheme.coral)
+                    .padding(.horizontal, 24)
+                    .transition(.opacity)
+                }
+
+                Button {
+                    Task { await viewModel.requestPasswordReset() }
+                } label: {
+                    Group {
+                        if viewModel.isResetting {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Text("Enviar Link")
+                                .fontWeight(.bold)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(AppTheme.accent)
+                .clipShape(.rect(cornerRadius: 14))
+                .disabled(viewModel.isResetting)
+                .padding(.horizontal, 24)
+
+                Spacer()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Fechar") { dismiss() }
+                }
+            }
+        }
     }
 }
 

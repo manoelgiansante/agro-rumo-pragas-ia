@@ -26,10 +26,10 @@ nonisolated enum ConfidenceLevel: String, Codable, Sendable {
 
     var percentage: String {
         switch self {
-        case .high: "90%+"
-        case .medium: "70-89%"
-        case .low: "50-69%"
-        case .veryLow: "<50%"
+        case .high: "85%+"
+        case .medium: "60-84%"
+        case .low: "40-59%"
+        case .veryLow: "<40%"
         }
     }
 }
