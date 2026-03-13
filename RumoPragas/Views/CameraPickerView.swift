@@ -1,5 +1,4 @@
 import SwiftUI
-import AVFoundation
 
 struct CameraPickerView: UIViewControllerRepresentable {
     @Binding var imageData: Data?

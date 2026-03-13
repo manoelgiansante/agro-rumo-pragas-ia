@@ -87,7 +87,7 @@ nonisolated final class SupabaseService: Sendable {
         guard let request = makeRequest(path: "/auth/v1/logout", method: "POST", token: token) else {
             return
         }
-        let _ = try await URLSession.shared.data(for: request)
+        _ = try await URLSession.shared.data(for: request)
     }
 
     func refreshToken(_ refreshToken: String) async throws -> AuthResponse {
