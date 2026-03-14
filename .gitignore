@@ -36,3 +36,10 @@ rork-eslint.config.js
 core
 node_modules
 .expo
+bun.lock
+yarn.lock
+
+# Secrets / env files
+*.xcconfig
+!Debug.xcconfig.template
+*.env.local

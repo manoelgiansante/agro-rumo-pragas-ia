@@ -14,7 +14,7 @@ nonisolated final class WeatherService: Sendable {
         return WeatherData(
             temperature: response.current.temperature2m,
             apparentTemperature: response.current.apparentTemperature ?? response.current.temperature2m,
-            humidity: response.current.relativeHumidity2m,
+            humidity: Double(response.current.relativeHumidity2m),
             precipitation: response.current.precipitation,
             dailyPrecipitation: dailyPrecip,
             windSpeed: response.current.windSpeed10m ?? 0,
@@ -62,7 +62,7 @@ nonisolated struct OpenMeteoResponse: Codable, Sendable {
     nonisolated struct OpenMeteoCurrent: Codable, Sendable {
         let temperature2m: Double
         let apparentTemperature: Double?
-        let relativeHumidity2m: Double
+        let relativeHumidity2m: Int
         let precipitation: Double
         let weatherCode: Int
         let windSpeed10m: Double?

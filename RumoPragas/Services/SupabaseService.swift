@@ -77,9 +77,9 @@ nonisolated final class SupabaseService: Sendable {
         guard let request = makeRequest(path: "/auth/v1/recover", method: "POST", body: body) else {
             throw APIError.invalidURL
         }
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (responseData, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            throw parseAuthError(data: data)
+            throw parseAuthError(data: responseData)
         }
     }
 
