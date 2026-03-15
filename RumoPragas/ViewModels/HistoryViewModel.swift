@@ -43,9 +43,13 @@ class HistoryViewModel {
         diagnoses.removeAll { $0.id == id }
         do {
             try await SupabaseService.shared.deleteDiagnosis(token: token, id: id)
+        } catch let apiError as APIError {
+            diagnoses = backup
+            deleteError = apiError.errorDescription ?? "Não foi possível excluir o diagnóstico."
+            showDeleteError = true
         } catch {
             diagnoses = backup
-            deleteError = "Não foi possível excluir o diagnóstico."
+            deleteError = "Não foi possível excluir o diagnóstico. Verifique sua conexão."
             showDeleteError = true
         }
     }

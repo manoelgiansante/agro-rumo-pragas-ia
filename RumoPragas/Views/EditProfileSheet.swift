@@ -18,7 +18,7 @@ struct EditProfileSheet: View {
 
                     Picker("Função", selection: $viewModel.userRole) {
                         ForEach(roles, id: \.self) { role in
-                            Text(roleLabel(role)).tag(role)
+                            Text(RoleDisplayName.displayName(for: role)).tag(role)
                         }
                     }
                 }
@@ -84,14 +84,4 @@ struct EditProfileSheet: View {
         }
     }
 
-    private func roleLabel(_ role: String) -> String {
-        switch role {
-        case "produtor": "Produtor Rural"
-        case "agronomo": "Agrônomo"
-        case "tecnico": "Técnico Agrícola"
-        case "consultor": "Consultor MIP"
-        case "estudante": "Estudante"
-        default: role
-        }
-    }
 }

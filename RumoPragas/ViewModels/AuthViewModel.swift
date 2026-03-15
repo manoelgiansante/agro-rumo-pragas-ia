@@ -73,8 +73,8 @@ class AuthViewModel {
             errorMessage = "Digite um e-mail válido"
             return
         }
-        guard password.count >= 6 else {
-            errorMessage = "Senha deve ter pelo menos 6 caracteres"
+        guard password.count >= 8 else {
+            errorMessage = "Senha deve ter pelo menos 8 caracteres"
             return
         }
         isLoading = true

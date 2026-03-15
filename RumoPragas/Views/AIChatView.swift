@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AIChatView: View {
+    let token: String?
     @State private var viewModel = AIChatViewModel()
     @FocusState private var isInputFocused: Bool
 
@@ -45,6 +46,9 @@ struct AIChatView: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            viewModel.token = token
         }
     }
 

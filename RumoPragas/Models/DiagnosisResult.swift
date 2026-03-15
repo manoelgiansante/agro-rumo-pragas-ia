@@ -158,8 +158,6 @@ nonisolated struct DiagnosisResult: Identifiable, Codable, Sendable, Hashable {
         pestId == "Healthy" || pestName == "Healthy"
     }
 
-    var isFavorite: Bool { false }
-
     nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

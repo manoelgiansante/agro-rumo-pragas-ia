@@ -1,6 +1,6 @@
 import Foundation
 
-nonisolated struct ChatMessage: Identifiable, Sendable {
+nonisolated struct ChatMessage: Identifiable, Sendable, Codable {
     let id: UUID
     let role: ChatRole
     let content: String
@@ -14,7 +14,7 @@ nonisolated struct ChatMessage: Identifiable, Sendable {
     }
 }
 
-nonisolated enum ChatRole: String, Sendable {
+nonisolated enum ChatRole: String, Sendable, Codable {
     case user
     case assistant
 }

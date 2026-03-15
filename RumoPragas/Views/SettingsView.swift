@@ -50,7 +50,7 @@ struct SettingsView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "person.badge.shield.checkmark.fill")
                             .font(.system(size: 10))
-                        Text(roleDisplayName(viewModel.userRole))
+                        Text(RoleDisplayName.displayName(for: viewModel.userRole))
                             .font(.caption2.weight(.semibold))
                     }
                     .foregroundStyle(AppTheme.accent)
@@ -188,14 +188,4 @@ struct SettingsView: View {
         }
     }
 
-    private func roleDisplayName(_ role: String) -> String {
-        switch role {
-        case "produtor": "Produtor Rural"
-        case "agronomo": "Agrônomo"
-        case "tecnico": "Técnico Agrícola"
-        case "consultor": "Consultor MIP"
-        case "estudante": "Estudante"
-        default: "Produtor Rural"
-        }
-    }
 }

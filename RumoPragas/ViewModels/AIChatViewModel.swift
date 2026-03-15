@@ -9,6 +9,7 @@ class AIChatViewModel {
     var isSending = false
     var errorMessage: String?
     var suggestions: [String] = []
+    var token: String?
 
     private let suggestedQuestions = [
         "Como identificar ferrugem asiática na soja?",
@@ -49,10 +50,12 @@ class AIChatViewModel {
                 ["role": msg.role.rawValue, "content": msg.content]
             }
 
-            let response = try await AIChatService.shared.sendMessage(messages: apiMessages)
+            let response = try await AIChatService.shared.sendMessage(messages: apiMessages, token: token)
 
             let assistantMessage = ChatMessage(role: .assistant, content: response)
             messages.append(assistantMessage)
+        } catch let apiError as APIError {
+            errorMessage = apiError.errorDescription ?? "Erro desconhecido."
         } catch {
             errorMessage = "Não foi possível obter resposta. Tente novamente."
         }

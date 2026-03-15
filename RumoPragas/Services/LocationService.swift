@@ -2,6 +2,7 @@ import Foundation
 import CoreLocation
 
 @Observable
+@MainActor
 class LocationService: NSObject, CLLocationManagerDelegate {
     static let shared = LocationService()
 

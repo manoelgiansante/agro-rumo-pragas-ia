@@ -7,8 +7,8 @@ nonisolated final class SupabaseService: Sendable {
     private let supabaseKey: String
 
     private init() {
-        self.supabaseURL = Config.EXPO_PUBLIC_SUPABASE_URL
-        self.supabaseKey = Config.EXPO_PUBLIC_SUPABASE_ANON_KEY
+        self.supabaseURL = Config.supabaseURL
+        self.supabaseKey = Config.supabaseAnonKey
     }
 
     private var baseURL: String { supabaseURL }
@@ -142,6 +142,26 @@ nonisolated final class SupabaseService: Sendable {
         return try JSONDecoder().decode([DiagnosisResult].self, from: data)
     }
 
+    func countDiagnoses(token: String, userId: String) async throws -> Int {
+        guard let request = makeRequest(
+            path: "/rest/v1/pragas_diagnoses?user_id=eq.\(userId)&select=id",
+            token: token,
+            additionalHeaders: ["Prefer": "count=exact", "Range-Unit": "items", "Range": "0-0"]
+        ) else {
+            throw APIError.invalidURL
+        }
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw APIError.networkError
+        }
+        if let rangeHeader = http.value(forHTTPHeaderField: "content-range"),
+           let total = rangeHeader.split(separator: "/").last,
+           let count = Int(total) {
+            return count
+        }
+        return 0
+    }
+
     func deleteDiagnosis(token: String, id: String) async throws {
         guard let request = makeRequest(
             path: "/rest/v1/pragas_diagnoses?id=eq.\(id)",
@@ -255,10 +275,6 @@ nonisolated final class SupabaseService: Sendable {
         }
         throw APIError.serverError("Erro do servidor (HTTP \(http.statusCode))")
     }
-}
-
-nonisolated struct EdgeFunctionError: Codable, Sendable {
-    let error: String
 }
 
 nonisolated struct AuthResponse: Codable, Sendable {

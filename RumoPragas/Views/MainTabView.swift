@@ -19,7 +19,7 @@ struct MainTabView: View {
             }
 
             Tab("Agro IA", systemImage: "sparkles", value: 3) {
-                AIChatView()
+                AIChatView(token: authVM.accessToken)
             }
 
             Tab("Ajustes", systemImage: "gearshape.fill", value: 4) {
