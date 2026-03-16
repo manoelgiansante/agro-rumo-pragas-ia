@@ -223,11 +223,14 @@ export const SupabaseService = {
     userId: string,
     profile: Record<string, any>,
   ): Promise<void> {
-    const res = await makeRequest(`/rest/v1/pragas_profiles?id=eq.${userId}`, {
-      method: 'PATCH',
-      body: profile,
+    // Use upsert so new users get a profile row created automatically
+    const res = await makeRequest('/rest/v1/pragas_profiles', {
+      method: 'POST',
+      body: { id: userId, ...profile },
       token,
-      additionalHeaders: { Prefer: 'return=representation' },
+      additionalHeaders: {
+        Prefer: 'return=representation,resolution=merge-duplicates',
+      },
     });
     if (!res.ok) throw new APIError('Erro de conexão. Verifique sua internet.');
   },

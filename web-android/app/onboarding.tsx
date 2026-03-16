@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuth } from '../src/contexts/AuthContext';
+import { SupabaseService } from '../src/services/supabaseService';
 import { AppTheme } from '../src/utils/theme';
 
 const { width } = Dimensions.get('window');
@@ -63,6 +65,7 @@ const pages: OnboardingPage[] = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { isAuthenticated, accessToken, currentUser } = useAuth();
   const [currentPage, setCurrentPage] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -73,8 +76,18 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleFinish = () => {
-    router.replace('/auth');
+  const handleFinish = async () => {
+    // Mark onboarding as done if user is already authenticated
+    if (isAuthenticated && accessToken && currentUser?.id) {
+      try {
+        await SupabaseService.updateProfile(accessToken, currentUser.id, {
+          onboarding_done: true,
+        });
+      } catch {}
+      router.replace('/(tabs)/home');
+    } else {
+      router.replace('/auth');
+    }
   };
 
   const renderPage = ({ item }: { item: OnboardingPage }) => (

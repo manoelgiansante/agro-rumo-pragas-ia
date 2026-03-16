@@ -302,7 +302,11 @@ export default function HomeScreen() {
                 <Text style={styles.sectionTitle}>Último Diagnóstico</Text>
                 <MaterialCommunityIcons name="clock" size={14} color={AppTheme.textSecondary} />
               </View>
-              <TouchableOpacity style={styles.card} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.card}
+                activeOpacity={0.7}
+                onPress={() => router.push('/(tabs)/history' as any)}
+              >
                 <View style={styles.diagnosisRow}>
                   <View style={styles.diagnosisIconCircle}>
                     <MaterialCommunityIcons name="bug" size={20} color={AppTheme.accent} />

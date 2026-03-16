@@ -72,9 +72,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, [refreshSession]);
 
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
   const signIn = async (email: string, password: string) => {
     if (!email || !password) {
       setErrorMessage('Preencha todos os campos');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setErrorMessage('Digite um e-mail válido');
       return;
     }
     setIsLoading(true);
@@ -95,6 +102,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, fullName: string) => {
     if (!email || !password || !fullName) {
       setErrorMessage('Preencha todos os campos');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setErrorMessage('Digite um e-mail válido');
       return;
     }
     if (password.length < 8) {
@@ -132,6 +143,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const requestPasswordReset = async (email: string): Promise<string> => {
     if (!email.trim()) {
       return 'Digite seu e-mail';
+    }
+    if (!isValidEmail(email)) {
+      return 'Digite um e-mail válido';
     }
     try {
       await SupabaseService.resetPassword(email.trim());

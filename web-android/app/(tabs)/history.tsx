@@ -558,6 +558,7 @@ export default function HistoryScreen() {
           placeholderTextColor={AppTheme.textTertiary}
           value={searchText}
           onChangeText={setSearchText}
+          maxLength={100}
         />
         {searchText.length > 0 && (
           <TouchableOpacity onPress={() => setSearchText('')}>

@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
+import { SupabaseService } from '../src/services/supabaseService';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppTheme } from '../src/utils/theme';
 
 export default function Index() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, accessToken, currentUser } = useAuth();
   const router = useRouter();
   const [showSplash, setShowSplash] = useState(true);
   const leafScale = React.useRef(new Animated.Value(0.5)).current;
@@ -21,12 +22,30 @@ export default function Index() {
 
   useEffect(() => {
     if (!isLoading) {
-      const timer = setTimeout(() => {
+      const timer = setTimeout(async () => {
         setShowSplash(false);
         if (isAuthenticated) {
-          router.replace('/(tabs)/home');
+          // Check if onboarding is done
+          let onboardingDone = true;
+          if (accessToken && currentUser?.id) {
+            try {
+              const profile = await SupabaseService.fetchProfile(accessToken, currentUser.id);
+              if (profile && profile.onboarding_done === false) {
+                onboardingDone = false;
+              } else if (!profile) {
+                onboardingDone = false;
+              }
+            } catch {
+              // On error, skip onboarding check
+            }
+          }
+          if (onboardingDone) {
+            router.replace('/(tabs)/home');
+          } else {
+            router.replace('/onboarding');
+          }
         } else {
-          router.replace('/auth');
+          router.replace('/onboarding');
         }
       }, 1500);
       return () => clearTimeout(timer);

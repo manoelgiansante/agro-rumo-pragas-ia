@@ -49,15 +49,26 @@ function TypingIndicator() {
   ]).current;
 
   useEffect(() => {
-    const animate = (idx: number) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anims[idx], { toValue: -4, duration: 300, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
-          Animated.timing(anims[idx], { toValue: 0, duration: 300, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
-        ]),
-      ).start();
+    const loops: Animated.CompositeAnimation[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    anims.forEach((_, i) => {
+      const timer = setTimeout(() => {
+        const loop = Animated.loop(
+          Animated.sequence([
+            Animated.timing(anims[i], { toValue: -4, duration: 300, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
+            Animated.timing(anims[i], { toValue: 0, duration: 300, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
+          ]),
+        );
+        loops.push(loop);
+        loop.start();
+      }, i * 150);
+      timers.push(timer);
+    });
+    return () => {
+      timers.forEach(clearTimeout);
+      loops.forEach((l) => l.stop());
+      anims.forEach((a) => a.setValue(0));
     };
-    anims.forEach((_, i) => setTimeout(() => animate(i), i * 150));
   }, []);
 
   return (

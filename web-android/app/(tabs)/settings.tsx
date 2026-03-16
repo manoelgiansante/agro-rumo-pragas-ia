@@ -86,13 +86,17 @@ function EditProfileModal({
 
   const save = async () => {
     if (!token || !userId) return;
+    if (!name.trim()) {
+      setError('Nome é obrigatório.');
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
       await SupabaseService.updateProfile(token, userId, {
-        full_name: name,
+        full_name: name.trim(),
         role,
-        city,
+        city: city.trim(),
         state,
         crops,
       });
