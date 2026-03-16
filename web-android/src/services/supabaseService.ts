@@ -6,6 +6,8 @@ import {
   UserProfile,
 } from '../types';
 
+declare const __DEV__: boolean;
+
 // ─── Error class ─────────────────────────────────────────────────────────────
 
 export class APIError extends Error {
@@ -284,14 +286,18 @@ export const SupabaseService = {
 
     const data = await res.json().catch(() => null);
 
-    console.log(
-      `[EdgeFunction] ${name} -> HTTP ${res.status}, ${JSON.stringify(data)?.length ?? 0} bytes`,
-    );
+    if (__DEV__) {
+      console.log(
+        `[EdgeFunction] ${name} -> HTTP ${res.status}, ${JSON.stringify(data)?.length ?? 0} bytes`,
+      );
+    }
 
     if (res.ok) return data;
 
-    const rawBody = JSON.stringify(data) ?? '(empty)';
-    console.log(`[EdgeFunction] Error body: ${rawBody.substring(0, 1000)}`);
+    if (__DEV__) {
+      const rawBody = JSON.stringify(data) ?? '(empty)';
+      console.log(`[EdgeFunction] Error body: ${rawBody.substring(0, 1000)}`);
+    }
 
     if (data && typeof data === 'object') {
       if (typeof data.error === 'string') throw new APIError(data.error);

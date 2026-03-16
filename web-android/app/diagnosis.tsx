@@ -100,11 +100,11 @@ export default function DiagnosisScreen() {
           [{ resize: { width: 960 } }],
           { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true }
         );
-        return { uri: recompressed.uri, base64: recompressed.base64! };
+        return { uri: recompressed.uri, base64: recompressed.base64 || '' };
       }
     }
 
-    return { uri: manipulated.uri, base64: manipulated.base64! };
+    return { uri: manipulated.uri, base64: manipulated.base64 || '' };
   };
 
   // ─── Image Selection ────────────────────────────────────────────────────

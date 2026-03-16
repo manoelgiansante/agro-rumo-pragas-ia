@@ -430,6 +430,7 @@ export default function HistoryScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedCropFilter, setSelectedCropFilter] = useState<string | null>(null);
   const [selectedDiagnosis, setSelectedDiagnosis] = useState<DiagnosisResult | null>(null);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -452,6 +453,12 @@ export default function HistoryScreen() {
     })();
   }, [loadHistory]);
 
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchText), 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadHistory();
@@ -460,7 +467,7 @@ export default function HistoryScreen() {
 
   const filtered = diagnoses.filter((d) => {
     const name = getDiagnosisDisplayName(d).toLowerCase();
-    const matchSearch = !searchText || name.includes(searchText.toLowerCase());
+    const matchSearch = !debouncedSearch || name.includes(debouncedSearch.toLowerCase());
     const ck = mapCropName(d.crop);
     const matchCrop = !selectedCropFilter || ck === selectedCropFilter;
     return matchSearch && matchCrop;

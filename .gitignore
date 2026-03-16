@@ -29,12 +29,30 @@ Package.resolved
 
 # Environment / Secrets
 .env
-.env.*
+.env.local
+.env.production
+.env.*.local
 
-# Legacy (React Native / Rork - não mais utilizado)
+# React Native / Expo
 node_modules/
 .expo/
 .bundle/
+dist/
+web-build/
+*.jsbundle
+
+# Build outputs
+*.apk
+*.aab
+*.ipa
+
+# Misc
 .rork/
 bun.lock
-package-lock.json
+*.log
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*

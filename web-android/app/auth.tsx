@@ -228,6 +228,9 @@ export default function AuthScreen() {
             onPress={handleSubmit}
             disabled={isLoading}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={isSignUpMode ? 'Criar conta' : 'Entrar na conta'}
+            accessibilityState={{ disabled: isLoading }}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />

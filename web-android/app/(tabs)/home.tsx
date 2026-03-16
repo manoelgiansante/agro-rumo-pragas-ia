@@ -251,6 +251,8 @@ export default function HomeScreen() {
             style={styles.card}
             activeOpacity={0.7}
             onPress={() => router.push('/diagnosis' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Diagnosticar praga com IA usando foto ou galeria"
           >
             <View style={styles.scanRow}>
               <View style={styles.scanIconBox}>

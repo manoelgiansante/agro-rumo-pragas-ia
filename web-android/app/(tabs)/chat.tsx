@@ -16,8 +16,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppTheme } from '../../src/utils/theme';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { AIChatService } from '../../src/services/aiChatService';
+import { StorageService } from '../../src/services/storageService';
 import { ChatMessage } from '../../src/types';
 import { useHeaderPadding } from '../../src/utils/useHeaderPadding';
+
+const CHAT_STORAGE_KEY = 'chat_messages';
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Suggested questions (same 6 from iOS)
@@ -105,6 +108,34 @@ export default function ChatScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState(() => pickRandom(ALL_SUGGESTIONS, 3));
   const scrollRef = useRef<FlatList>(null);
+  const isMountedRef = useRef(true);
+
+  // Persist and restore chat messages
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await StorageService.load(CHAT_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved) as ChatMessage[];
+          // Restore Date objects from serialized strings
+          const restored = parsed.map(m => ({
+            ...m,
+            timestamp: new Date(m.timestamp),
+          }));
+          if (isMountedRef.current) setMessages(restored);
+        }
+      } catch { /* silent */ }
+    })();
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      // Persist only the last 50 messages to avoid storage bloat
+      const toSave = messages.slice(-50);
+      StorageService.save(CHAT_STORAGE_KEY, JSON.stringify(toSave)).catch(() => {});
+    }
+  }, [messages]);
 
   const refreshSuggestions = () => setSuggestions(pickRandom(ALL_SUGGESTIONS, 3));
 
@@ -140,25 +171,32 @@ export default function ChatScreen() {
 
       const response = await AIChatService.sendMessage(recentMsgs, accessToken || undefined);
 
-      const assistantMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
+      if (isMountedRef.current) {
+        const assistantMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: response,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+      }
     } catch {
-      setErrorMessage('Não foi possível obter resposta. Tente novamente.');
+      if (isMountedRef.current) {
+        setErrorMessage('Não foi possível obter resposta. Tente novamente.');
+      }
     }
 
-    setIsSending(false);
-    scrollToEnd();
+    if (isMountedRef.current) {
+      setIsSending(false);
+      scrollToEnd();
+    }
   };
 
   const clearChat = () => {
     setMessages([]);
     setErrorMessage(null);
     refreshSuggestions();
+    StorageService.remove(CHAT_STORAGE_KEY).catch(() => {});
   };
 
   const formatTime = (d: Date) => {
@@ -306,6 +344,9 @@ export default function ChatScreen() {
               s.sendBtn,
               { backgroundColor: canSend ? AppTheme.accent : AppTheme.surfaceCard },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel="Enviar mensagem"
+            accessibilityState={{ disabled: !canSend }}
           >
             <MaterialCommunityIcons
               name="arrow-up"
