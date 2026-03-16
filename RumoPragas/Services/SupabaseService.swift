@@ -246,14 +246,18 @@ nonisolated final class SupabaseService: Sendable {
             throw APIError.networkError
         }
 
+        #if DEBUG
         print("[EdgeFunction] \(name) -> HTTP \(http.statusCode), \(data.count) bytes")
+        #endif
 
         if (200...299).contains(http.statusCode) {
             return data
         }
 
+        #if DEBUG
         let rawBody = String(data: data, encoding: .utf8) ?? "(empty)"
         print("[EdgeFunction] Error body: \(rawBody.prefix(1000))")
+        #endif
 
         if let errorObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             if let errMsg = errorObj["error"] as? String {
