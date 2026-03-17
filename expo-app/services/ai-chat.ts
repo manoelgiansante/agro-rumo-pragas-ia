@@ -1,57 +1,53 @@
 import { Config } from '../constants/config';
 
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'user' | 'assistant';
   content: string;
 }
 
-const SYSTEM_PROMPT = `Voce e o Agro IA, um assistente especializado em pragas agricolas, doencas de plantas e manejo integrado de pragas (MIP). Voce foi criado pela AgroRumo para ajudar agricultores brasileiros.
-
-Suas capacidades:
-- Identificar pragas e doencas com base em descricoes de sintomas
-- Recomendar metodos de controle (biologico, quimico e cultural)
-- Orientar sobre monitoramento e prevencao
-- Fornecer informacoes sobre ciclo de vida de pragas
-- Sugerir produtos fitossanitarios registrados no MAPA
-- Orientar sobre boas praticas agricolas
-
-Regras:
-- Sempre responda em portugues brasileiro
-- Seja objetivo e pratico nas recomendacoes
-- Quando recomendar produtos, sempre mencione a importancia de consultar um agronomo
-- Priorize metodos de controle biologico e MIP quando possivel
-- Se nao tiver certeza, diga claramente e recomende consultar um profissional`;
+const SYSTEM_PROMPT = `Você é o Agro IA, assistente especializado em pragas agrícolas e manejo integrado de pragas (MIP) do app Rumo Pragas. Você ajuda produtores rurais, agrônomos e técnicos agrícolas brasileiros. Responda sempre em português brasileiro, de forma clara e prática. Suas especialidades: identificação de pragas, doenças de plantas, recomendações de manejo (cultural, convencional e orgânico), prevenção, monitoramento, condições climáticas favoráveis a pragas, e boas práticas agrícolas. Seja direto, use linguagem acessível e, quando relevante, sugira o diagnóstico por foto do app. Culturas principais: soja, milho, café, algodão, cana-de-açúcar e trigo.`;
 
 export async function sendChatMessage(
-  messages: ChatMessage[],
-  token: string
+  messages: { role: string; content: string }[],
+  _token?: string | null
 ): Promise<string> {
-  const toolkitUrl = Config.TOOLKIT_URL;
-  if (!toolkitUrl) {
-    throw new Error('TOOLKIT_URL nao configurado');
+  const apiKey = Config.CLAUDE_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('Claude API key não configurada');
   }
 
-  const url = `${toolkitUrl}/agent/chat`;
+  const claudeMessages = messages.map(m => ({
+    role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+    content: m.content,
+  }));
 
-  const fullMessages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    ...messages,
-  ];
-
-  const response = await fetch(url, {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
     },
-    body: JSON.stringify({ messages: fullMessages }),
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: claudeMessages,
+    }),
   });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`Chat failed (${response.status}): ${errorBody}`);
+    throw new Error(`Erro na IA (${response.status}): ${errorBody}`);
   }
 
   const data = await response.json();
-  return data.response ?? data.message ?? data.content ?? '';
+
+  if (data.content && data.content.length > 0) {
+    return data.content[0].text;
+  }
+
+  throw new Error('Resposta vazia da IA');
 }
