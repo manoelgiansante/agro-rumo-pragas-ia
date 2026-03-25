@@ -24,7 +24,7 @@ interface CollapsibleSectionProps {
   defaultExpanded?: boolean;
 }
 
-export default function CollapsibleSection({
+export function CollapsibleSection({
   title,
   icon,
   iconColor = Colors.accent,

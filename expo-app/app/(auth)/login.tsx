@@ -15,6 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Leaf, Eye, EyeOff, Mail, Lock, User } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 import { useAuthContext } from '../../context/AuthContext';
 import { Colors, Spacing, BorderRadius, FontSize, FontWeight, Gradients } from '../../constants/theme';
 
@@ -249,8 +250,8 @@ export default function LoginScreen() {
           {/* Terms */}
           <Text style={styles.termsText}>
             Ao continuar, voce concorda com os{' '}
-            <Text style={styles.termsLink}>Termos de Uso</Text> e{' '}
-            <Text style={styles.termsLink}>Politica de Privacidade</Text>.
+            <Text style={styles.termsLink} onPress={() => router.push('/terms')}>Termos de Uso</Text> e{' '}
+            <Text style={styles.termsLink} onPress={() => router.push('/privacy')}>Politica de Privacidade</Text>.
           </Text>
         </View>
       </ScrollView>

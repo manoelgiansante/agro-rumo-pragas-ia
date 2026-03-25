@@ -8,7 +8,7 @@ interface PremiumCardProps {
   style?: ViewStyle;
 }
 
-export default function PremiumCard({ children, padding = Spacing.lg, style }: PremiumCardProps) {
+export function PremiumCard({ children, padding = Spacing.lg, style }: PremiumCardProps) {
   const isDark = useColorScheme() === 'dark';
 
   return (

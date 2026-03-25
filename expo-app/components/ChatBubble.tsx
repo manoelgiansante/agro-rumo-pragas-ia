@@ -21,7 +21,7 @@ function formatTime(date: Date): string {
   return `${h}:${m}`;
 }
 
-export default function ChatBubble({ message }: ChatBubbleProps) {
+export function ChatBubble({ message }: ChatBubbleProps) {
   const isDark = useColorScheme() === 'dark';
   const isUser = message.role === 'user';
 

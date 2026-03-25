@@ -5,17 +5,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Colors, FontSize, Gradients } from '../../constants/theme';
 import { sendDiagnosis } from '../../services/diagnosis';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthContext } from '../../context/AuthContext';
 import { useLocation } from '../../hooks/useLocation';
 
 const STEPS = ['Preparando imagem...', 'Enviando para análise...', 'Identificando praga...', 'Processando resultado...'];
 
 export default function LoadingScreen() {
   const { imageBase64, cropApiName } = useLocalSearchParams<{ imageBase64: string; cropApiName: string }>();
-  const { session } = useAuth();
-  const { location } = useLocation();
+  const { session } = useAuthContext();
+  const { location, getCurrentLocation } = useLocation();
   const [step, setStep] = useState(0);
   const [progress] = useState(new Animated.Value(0));
+
+  useEffect(() => { getCurrentLocation(); }, [getCurrentLocation]);
 
   useEffect(() => {
     const interval = setInterval(() => setStep(s => Math.min(s + 1, STEPS.length - 1)), 2000);

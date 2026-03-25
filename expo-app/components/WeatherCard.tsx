@@ -1,22 +1,24 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import PremiumCard from './PremiumCard';
-import { Colors, FontSize, FontWeight, Spacing } from '../constants/theme';
+import { PremiumCard } from './PremiumCard';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../constants/theme';
+import type { DailyForecast } from '../services/weather';
 
-export interface WeatherData {
+export interface WeatherCardData {
   temperature: number;
   humidity: number;
   windSpeed: number;
-  dailyPrecipitation: number;
+  dailyPrecipitationSum: number;
   description: string;
   icon: string;
-  location: string;
+  location?: string;
+  forecast?: DailyForecast[];
 }
 
 interface WeatherCardProps {
-  weather: WeatherData | null;
-  isLoading: boolean;
+  weather: WeatherCardData | null;
+  isLoading?: boolean;
 }
 
 function getWeatherIcon(icon: string): React.ComponentProps<typeof Ionicons>['name'] {
@@ -28,7 +30,7 @@ function getWeatherIcon(icon: string): React.ComponentProps<typeof Ionicons>['na
   return 'partly-sunny';
 }
 
-export default function WeatherCard({ weather, isLoading }: WeatherCardProps) {
+export function WeatherCard({ weather, isLoading = false }: WeatherCardProps) {
   const isDark = useColorScheme() === 'dark';
 
   if (isLoading) {
@@ -55,7 +57,7 @@ export default function WeatherCard({ weather, isLoading }: WeatherCardProps) {
           </View>
           <View style={styles.tempInfo}>
             <Text style={[styles.location, isDark && { color: Colors.systemGray2 }]}>
-              {weather.location}
+              {weather.location || 'Sua regiao'}
             </Text>
             <Text style={[styles.temperature, isDark && { color: Colors.textDark }]}>
               {Math.round(weather.temperature)}{'\u00B0'}C
@@ -75,7 +77,7 @@ export default function WeatherCard({ weather, isLoading }: WeatherCardProps) {
           />
           <MetricRow
             icon="rainy"
-            value={`${weather.dailyPrecipitation.toFixed(1)} mm`}
+            value={`${weather.dailyPrecipitationSum.toFixed(1)} mm`}
             color={Colors.techBlue}
             isDark={isDark}
           />
@@ -87,7 +89,39 @@ export default function WeatherCard({ weather, isLoading }: WeatherCardProps) {
           />
         </View>
       </View>
+
+      {weather.forecast && weather.forecast.length > 0 && (
+        <>
+          <View style={[styles.forecastDivider, isDark && { backgroundColor: Colors.separatorDark }]} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.forecastRow}
+          >
+            {weather.forecast.map((day) => (
+              <ForecastDayCard key={day.date} day={day} isDark={isDark} />
+            ))}
+          </ScrollView>
+        </>
+      )}
     </PremiumCard>
+  );
+}
+
+function ForecastDayCard({ day, isDark }: { day: DailyForecast; isDark: boolean }) {
+  return (
+    <View style={[styles.forecastCard, isDark && { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
+      <Text style={[styles.forecastDay, isDark && { color: Colors.systemGray2 }]}>
+        {day.dayAbbrev}
+      </Text>
+      <Ionicons name={getWeatherIcon(day.icon)} size={18} color={Colors.warmAmber} />
+      <Text style={[styles.forecastTemp, isDark && { color: Colors.textDark }]}>
+        {Math.round(day.temperatureMax)}{'\u00B0'}
+      </Text>
+      <Text style={[styles.forecastTempMin, isDark && { color: Colors.systemGray2 }]}>
+        {Math.round(day.temperatureMin)}{'\u00B0'}
+      </Text>
+    </View>
   );
 }
 
@@ -160,6 +194,43 @@ const styles = StyleSheet.create({
     fontSize: FontSize.caption,
     fontWeight: FontWeight.semibold,
     color: Colors.textSecondary,
+    fontVariant: ['tabular-nums'],
+  },
+  forecastDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.separator,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  forecastRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingVertical: 4,
+  },
+  forecastCard: {
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    minWidth: 52,
+  },
+  forecastDay: {
+    fontSize: 11,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textSecondary,
+    textTransform: 'capitalize',
+  },
+  forecastTemp: {
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+  forecastTempMin: {
+    fontSize: 11,
+    color: Colors.systemGray3,
     fontVariant: ['tabular-nums'],
   },
   loadingContainer: {

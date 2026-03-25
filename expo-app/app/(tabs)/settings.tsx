@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, StyleSheet, useColorScheme, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Gradients } from '../../constants/theme';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthContext } from '../../context/AuthContext';
 
 export default function SettingsScreen() {
   const isDark = useColorScheme() === 'dark';
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useAuthContext();
   const [darkMode, setDarkMode] = useState(isDark);
   const [pushEnabled, setPushEnabled] = useState(true);
   const userName = user?.user_metadata?.full_name || 'Produtor';
@@ -68,8 +68,8 @@ export default function SettingsScreen() {
       </Section>
 
       <Section title="Sobre">
-        <Row icon="hand-left" label="Política de Privacidade" onPress={() => Linking.openURL('https://rumopragas.com.br/privacidade')} />
-        <Row icon="document-text" label="Termos de Uso" onPress={() => Linking.openURL('https://rumopragas.com.br/termos')} />
+        <Row icon="hand-left" label="Política de Privacidade" onPress={() => router.push('/privacy')} />
+        <Row icon="document-text" label="Termos de Uso" onPress={() => router.push('/terms')} />
         <Row icon="information-circle" label="Versão" value="1.0.0" />
       </Section>
 

@@ -12,7 +12,7 @@ function getBarColor(value: number): string {
   return Colors.systemGray3;
 }
 
-export default function ConfidenceBar({ value }: ConfidenceBarProps) {
+export function ConfidenceBar({ value }: ConfidenceBarProps) {
   const color = getBarColor(value);
   const pct = Math.round(value * 100);
 

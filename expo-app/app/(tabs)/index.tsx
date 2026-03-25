@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, useColorScheme } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,19 +6,30 @@ import { router } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Gradients } from '../../constants/theme';
 import { PremiumCard } from '../../components/PremiumCard';
 import { WeatherCard } from '../../components/WeatherCard';
+import { AlertCard } from '../../components/AlertCard';
 import { supabase } from '../../services/supabase';
-import { fetchWeather, WeatherData } from '../../services/weather';
-import { useAuth } from '../../hooks/useAuth';
+import { fetchWeather } from '../../services/weather';
+import type { WeatherData } from '../../services/weather';
+import { generateAlerts } from '../../services/alerts';
+import type { PestAlert } from '../../services/alerts';
+import type { WeatherCardData } from '../../components/WeatherCard';
+import { useAuthContext } from '../../context/AuthContext';
 import { useLocation } from '../../hooks/useLocation';
 
 export default function HomeScreen() {
-  const { user, session } = useAuth();
-  const { location, cityName } = useLocation();
+  const { user, session } = useAuthContext();
+  const { location, cityName, getCurrentLocation } = useLocation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weather, setWeather] = useState<WeatherCardData | null>(null);
+  const [weatherRaw, setWeatherRaw] = useState<WeatherData | null>(null);
   const [diagnosisCount, setDiagnosisCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+
+  const alerts: PestAlert[] = useMemo(() => {
+    if (!weatherRaw) return [];
+    return generateAlerts(weatherRaw).slice(0, 3);
+  }, [weatherRaw]);
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -31,8 +42,17 @@ export default function HomeScreen() {
     if (location) {
       try {
         const w = await fetchWeather(location.latitude, location.longitude);
-        if (cityName) w.location = cityName;
-        setWeather(w);
+        setWeatherRaw(w);
+        setWeather({
+          temperature: w.temperature,
+          humidity: w.humidity,
+          windSpeed: w.windSpeed,
+          dailyPrecipitationSum: w.dailyPrecipitationSum,
+          description: w.description,
+          icon: w.icon,
+          location: cityName || undefined,
+          forecast: w.forecast,
+        });
       } catch {}
     }
     if (session?.access_token && user?.id) {
@@ -46,6 +66,7 @@ export default function HomeScreen() {
     }
   }, [location, cityName, session, user]);
 
+  useEffect(() => { getCurrentLocation(); }, [getCurrentLocation]);
   useEffect(() => { loadData(); }, [loadData]);
 
   const onRefresh = async () => {
@@ -113,6 +134,25 @@ export default function HomeScreen() {
           ))}
         </View>
 
+        {alerts.length > 0 && (
+          <>
+            <View style={styles.alertsHeader}>
+              <View style={styles.alertsTitleRow}>
+                <Ionicons name="notifications" size={20} color={Colors.coral} />
+                <Text style={[styles.sectionTitle, isDark && styles.textDark, { marginTop: 0, marginBottom: 0 }]}>
+                  Alertas da Regiao
+                </Text>
+              </View>
+              <View style={styles.alertsBadge}>
+                <Text style={styles.alertsBadgeText}>{alerts.length}</Text>
+              </View>
+            </View>
+            {alerts.map((alert) => (
+              <AlertCard key={alert.id} alert={alert} />
+            ))}
+          </>
+        )}
+
         <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Boas Práticas</Text>
         {tips.map((tip, i) => (
           <PremiumCard key={i} style={{ marginBottom: Spacing.sm }}>
@@ -155,4 +195,29 @@ const styles = StyleSheet.create({
   tipTitle: { fontSize: FontSize.subheadline, fontWeight: '600' },
   tipDesc: { fontSize: FontSize.caption, color: Colors.textSecondary, marginTop: 2 },
   textDark: { color: Colors.textDark },
+  alertsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.md,
+  },
+  alertsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  alertsBadge: {
+    backgroundColor: Colors.coral,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertsBadgeText: {
+    color: '#FFF',
+    fontSize: FontSize.caption2,
+    fontWeight: '700',
+  },
 });

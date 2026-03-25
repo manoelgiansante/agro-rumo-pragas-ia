@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, Alert, StyleSheet, useColorScheme, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../constants/theme';
 import { PremiumCard } from '../../components/PremiumCard';
 import { DiagnosisCard } from '../../components/DiagnosisCard';
 import { supabase } from '../../services/supabase';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuthContext } from '../../context/AuthContext';
 
 export default function HistoryScreen() {
-  const { user, session } = useAuth();
+  const { user, session } = useAuthContext();
   const isDark = useColorScheme() === 'dark';
   const [diagnoses, setDiagnoses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,11 @@ export default function HistoryScreen() {
     setLoading(false);
   };
 
-  useEffect(() => { loadDiagnoses(); }, [user, session]);
+  useFocusEffect(
+    useCallback(() => {
+      loadDiagnoses();
+    }, [user, session])
+  );
 
   const deleteDiagnosis = async (id: string) => {
     Alert.alert('Excluir', 'Tem certeza que deseja excluir este diagnóstico?', [

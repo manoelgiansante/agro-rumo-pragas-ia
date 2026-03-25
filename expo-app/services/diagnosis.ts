@@ -1,19 +1,8 @@
 import { Config } from '../constants/config';
+import type { DiagnosisResult } from '../types/diagnosis';
+import { parseNotes } from '../types/diagnosis';
 
-export interface DiagnosisResult {
-  id: string;
-  user_id: string;
-  crop_type: string;
-  image_url: string | null;
-  diagnosis_text: string;
-  confidence: number;
-  pest_name: string | null;
-  severity: string | null;
-  recommendations: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  created_at: string;
-}
+export type { DiagnosisResult };
 
 export async function sendDiagnosis(
   imageBase64: string,
@@ -40,10 +29,17 @@ export async function sendDiagnosis(
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`Diagnosis failed (${response.status}): ${errorBody}`);
+    throw new Error(`Diagnostico falhou (${response.status}): ${errorBody}`);
   }
 
-  return response.json();
+  const data = await response.json();
+
+  // Parse notes if they come as string
+  if (data.notes && !data.parsedNotes) {
+    data.parsedNotes = parseNotes(data.notes);
+  }
+
+  return data as DiagnosisResult;
 }
 
 export async function fetchDiagnoses(
@@ -64,10 +60,14 @@ export async function fetchDiagnoses(
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch diagnoses: ${response.status}`);
+    throw new Error(`Falha ao buscar diagnosticos: ${response.status}`);
   }
 
-  return response.json();
+  const rows = await response.json();
+  return rows.map((row: DiagnosisResult) => ({
+    ...row,
+    parsedNotes: parseNotes(row.notes),
+  }));
 }
 
 export async function deleteDiagnosis(token: string, id: string): Promise<void> {
@@ -83,7 +83,7 @@ export async function deleteDiagnosis(token: string, id: string): Promise<void> 
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to delete diagnosis: ${response.status}`);
+    throw new Error(`Falha ao excluir diagnostico: ${response.status}`);
   }
 }
 
@@ -102,7 +102,7 @@ export async function fetchDiagnosisCount(token: string, userId: string): Promis
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch count: ${response.status}`);
+    throw new Error(`Falha ao buscar contagem: ${response.status}`);
   }
 
   const count = response.headers.get('content-range');

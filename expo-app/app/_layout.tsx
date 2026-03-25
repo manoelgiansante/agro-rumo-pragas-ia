@@ -3,8 +3,13 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuthContext } from '../context/AuthContext';
+import { useNotifications } from '../hooks/useNotifications';
 import { Colors } from '../constants/theme';
+
+// Prevent the splash screen from auto-hiding before data is loaded
+SplashScreen.preventAutoHideAsync();
 
 const ONBOARDING_KEY = '@rumo_pragas_onboarding_seen';
 
@@ -14,11 +19,21 @@ function RootLayoutNav() {
   const router = useRouter();
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
 
+  // Register for push notifications only after the user is authenticated
+  useNotifications(isAuthenticated);
+
   useEffect(() => {
     AsyncStorage.getItem(ONBOARDING_KEY).then((value) => {
       setHasSeenOnboarding(value === 'true');
     });
   }, []);
+
+  // Hide splash screen once auth state and onboarding check are resolved
+  useEffect(() => {
+    if (!isLoading && hasSeenOnboarding !== null) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading, hasSeenOnboarding]);
 
   useEffect(() => {
     if (isLoading || hasSeenOnboarding === null) return;
@@ -50,6 +65,8 @@ function RootLayoutNav() {
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="terms" />
+        <Stack.Screen name="privacy" />
       </Stack>
     </>
   );

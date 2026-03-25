@@ -1,52 +1,53 @@
 import { Config } from '../constants/config';
+import { supabase } from './supabase';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-const SYSTEM_PROMPT = `Você é o Agro IA, assistente especializado em pragas agrícolas e manejo integrado de pragas (MIP) do app Rumo Pragas. Você ajuda produtores rurais, agrônomos e técnicos agrícolas brasileiros. Responda sempre em português brasileiro, de forma clara e prática. Suas especialidades: identificação de pragas, doenças de plantas, recomendações de manejo (cultural, convencional e orgânico), prevenção, monitoramento, condições climáticas favoráveis a pragas, e boas práticas agrícolas. Seja direto, use linguagem acessível e, quando relevante, sugira o diagnóstico por foto do app. Culturas principais: soja, milho, café, algodão, cana-de-açúcar e trigo.`;
-
 export async function sendChatMessage(
-  messages: { role: string; content: string }[],
-  _token?: string | null
+  messages: { role: string; content: string }[]
 ): Promise<string> {
-  const apiKey = Config.CLAUDE_API_KEY;
+  // Get current session token
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-  if (!apiKey) {
-    throw new Error('Claude API key não configurada');
+  if (sessionError || !session?.access_token) {
+    throw new Error('Voce precisa estar logado para usar o chat IA');
   }
 
-  const claudeMessages = messages.map(m => ({
-    role: m.role === 'user' ? 'user' as const : 'assistant' as const,
-    content: m.content,
-  }));
+  const url = `${Config.SUPABASE_URL}/functions/v1/ai-chat`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
+      'Authorization': `Bearer ${session.access_token}`,
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: claudeMessages,
+      messages: messages.map(m => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.content,
+      })),
     }),
   });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`Erro na IA (${response.status}): ${errorBody}`);
+    let errorMessage = `Erro na IA (${response.status})`;
+    try {
+      const parsed = JSON.parse(errorBody);
+      if (parsed.error) errorMessage = parsed.error;
+    } catch {
+      // Use default error message
+    }
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();
 
-  if (data.content && data.content.length > 0) {
-    return data.content[0].text;
+  if (data.response) {
+    return data.response;
   }
 
   throw new Error('Resposta vazia da IA');

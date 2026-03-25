@@ -1,3 +1,14 @@
+export interface DailyForecast {
+  date: string;
+  dayAbbrev: string;
+  weatherCode: number;
+  temperatureMax: number;
+  temperatureMin: number;
+  precipitationSum: number;
+  description: string;
+  icon: string;
+}
+
 export interface WeatherData {
   temperature: number;
   apparentTemperature: number;
@@ -9,7 +20,10 @@ export interface WeatherData {
   dailyPrecipitationSum: number;
   description: string;
   icon: string;
+  forecast?: DailyForecast[];
 }
+
+const DAY_ABBREVS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 
 const WEATHER_CODE_MAP: Record<number, { description: string; icon: string }> = {
   0: { description: 'Ceu limpo', icon: 'sunny' },
@@ -46,7 +60,8 @@ export async function fetchWeather(latitude: number, longitude: number): Promise
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
     `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,rain,weather_code,wind_speed_10m` +
-    `&daily=precipitation_sum&timezone=auto&forecast_days=1`;
+    `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code` +
+    `&timezone=auto&forecast_days=7`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -59,6 +74,22 @@ export async function fetchWeather(latitude: number, longitude: number): Promise
   const code = current.weather_code as number;
   const mapped = WEATHER_CODE_MAP[code] ?? { description: 'Desconhecido', icon: 'partly-sunny' };
 
+  const forecast: DailyForecast[] = (daily.time as string[]).map((dateStr: string, i: number) => {
+    const dayCode = daily.weather_code[i] as number;
+    const dayMapped = WEATHER_CODE_MAP[dayCode] ?? { description: 'Desconhecido', icon: 'partly-sunny' };
+    const date = new Date(dateStr + 'T12:00:00');
+    return {
+      date: dateStr,
+      dayAbbrev: i === 0 ? 'Hoje' : DAY_ABBREVS[date.getDay()],
+      weatherCode: dayCode,
+      temperatureMax: daily.temperature_2m_max[i],
+      temperatureMin: daily.temperature_2m_min[i],
+      precipitationSum: daily.precipitation_sum[i],
+      description: dayMapped.description,
+      icon: dayMapped.icon,
+    };
+  });
+
   return {
     temperature: current.temperature_2m,
     apparentTemperature: current.apparent_temperature,
@@ -70,5 +101,6 @@ export async function fetchWeather(latitude: number, longitude: number): Promise
     dailyPrecipitationSum: daily.precipitation_sum?.[0] ?? 0,
     description: mapped.description,
     icon: mapped.icon,
+    forecast,
   };
 }
