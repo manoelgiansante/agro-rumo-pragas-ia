@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n from '../i18n';
 
 const PUSH_TOKEN_KEY = '@rumo_pragas_push_token';
 
@@ -36,8 +37,8 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   // Create Android notification channel
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('pest-alerts', {
-      name: 'Alertas de Pragas',
-      description: 'Notificacoes sobre riscos de pragas na sua regiao',
+      name: i18n.t('notifications.pestAlertsChannel'),
+      description: i18n.t('notifications.pestAlertsDesc'),
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#1A966B',
@@ -45,8 +46,8 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     });
 
     await Notifications.setNotificationChannelAsync('general', {
-      name: 'Geral',
-      description: 'Notificacoes gerais do aplicativo',
+      name: i18n.t('notifications.generalChannel'),
+      description: i18n.t('notifications.generalDesc'),
       importance: Notifications.AndroidImportance.DEFAULT,
     });
   }

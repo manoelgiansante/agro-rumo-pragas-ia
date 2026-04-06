@@ -1,5 +1,6 @@
 import { Config } from '../constants/config';
 import { supabase } from './supabase';
+import i18n from '../i18n';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -16,7 +17,7 @@ export async function sendChatMessage(
   } = await supabase.auth.getSession();
 
   if (sessionError || !session?.access_token) {
-    throw new Error('Voce precisa estar logado para usar o chat IA');
+    throw new Error(i18n.t('aiChat.loginRequired'));
   }
 
   const url = `${Config.SUPABASE_URL}/functions/v1/ai-chat`;
@@ -48,24 +49,22 @@ export async function sendChatMessage(
     let errorMessage: string;
     switch (true) {
       case response.status === 401:
-        errorMessage = 'Sessao expirada. Faca login novamente.';
+        errorMessage = i18n.t('aiChat.sessionExpired');
         break;
       case response.status === 403 && errorBody.code === 'CHAT_LIMIT_REACHED':
-        errorMessage =
-          errorBody.error || 'Limite de mensagens atingido. Faca upgrade para continuar.';
+        errorMessage = errorBody.error || i18n.t('aiChat.chatLimitReached');
         break;
       case response.status === 403:
-        errorMessage = 'Voce nao tem permissao para usar o chat IA. Verifique sua assinatura.';
+        errorMessage = i18n.t('aiChat.noPermission');
         break;
       case response.status === 429:
-        errorMessage = 'Muitas mensagens enviadas. Aguarde um momento e tente novamente.';
+        errorMessage = i18n.t('aiChat.tooManyMessages');
         break;
       case response.status >= 500:
-        errorMessage =
-          'O servico de IA esta temporariamente indisponivel. Tente novamente em alguns minutos.';
+        errorMessage = i18n.t('aiChat.serviceUnavailable');
         break;
       default:
-        errorMessage = 'Ocorreu um erro ao processar sua mensagem. Tente novamente.';
+        errorMessage = i18n.t('aiChat.genericError');
     }
 
     const error = new Error(errorMessage) as Error & { code?: string };
@@ -79,5 +78,5 @@ export async function sendChatMessage(
     return data.response;
   }
 
-  throw new Error('Resposta vazia da IA');
+  throw new Error(i18n.t('aiChat.emptyResponse'));
 }

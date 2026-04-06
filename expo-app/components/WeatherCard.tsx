@@ -8,6 +8,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { PremiumCard } from './PremiumCard';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../constants/theme';
 import type { DailyForecast } from '../services/weather';
@@ -42,6 +43,7 @@ export const WeatherCard = React.memo(function WeatherCard({
   isLoading = false,
 }: WeatherCardProps) {
   const isDark = useColorScheme() === 'dark';
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -49,7 +51,7 @@ export const WeatherCard = React.memo(function WeatherCard({
         <View style={styles.loadingContainer}>
           <ActivityIndicator color={Colors.accent} />
           <Text style={[styles.loadingText, isDark && { color: Colors.textDark }]}>
-            Carregando clima...
+            {t('weather.loading')}
           </Text>
         </View>
       </PremiumCard>
@@ -63,16 +65,28 @@ export const WeatherCard = React.memo(function WeatherCard({
       <View
         style={styles.container}
         accessible
-        accessibilityLabel={`Clima em ${weather.location || 'sua regiao'}: ${Math.round(weather.temperature)} graus, ${weather.description}, umidade ${Math.round(weather.humidity)} por cento, precipitacao ${weather.dailyPrecipitationSum.toFixed(1)} milimetros, vento ${Math.round(weather.windSpeed)} quilometros por hora`}
+        accessibilityLabel={t('weather.a11yLabel', {
+          location: weather.location || t('weather.yourRegion'),
+          temperature: Math.round(weather.temperature),
+          description: weather.description,
+          humidity: Math.round(weather.humidity),
+          precipitation: weather.dailyPrecipitationSum.toFixed(1),
+          wind: Math.round(weather.windSpeed),
+        })}
         accessibilityRole="summary"
       >
         <View style={styles.leftSection}>
           <View style={styles.iconCircle}>
-            <Ionicons name={getWeatherIcon(weather.icon)} size={24} color={Colors.warmAmber} accessibilityElementsHidden />
+            <Ionicons
+              name={getWeatherIcon(weather.icon)}
+              size={24}
+              color={Colors.warmAmber}
+              accessibilityElementsHidden
+            />
           </View>
           <View style={styles.tempInfo}>
             <Text style={[styles.location, isDark && { color: Colors.systemGray2 }]}>
-              {weather.location || 'Sua regiao'}
+              {weather.location || t('weather.yourRegion')}
             </Text>
             <Text style={[styles.temperature, isDark && { color: Colors.textDark }]}>
               {Math.round(weather.temperature)}

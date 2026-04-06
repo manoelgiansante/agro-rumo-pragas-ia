@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
 
 interface SearchInputProps {
@@ -9,27 +10,29 @@ interface SearchInputProps {
   placeholder?: string;
 }
 
-export function SearchInput({ value, onChangeText, placeholder = 'Buscar...' }: SearchInputProps) {
+export function SearchInput({ value, onChangeText, placeholder }: SearchInputProps) {
   const isDark = useColorScheme() === 'dark';
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder || t('common.searchDefault');
 
   return (
     <View style={[styles.container, isDark && styles.containerDark]}>
       <Ionicons name="search" size={18} color={Colors.textSecondary} />
       <TextInput
         style={[styles.input, isDark && styles.inputDark]}
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         placeholderTextColor={Colors.textSecondary}
         value={value}
         onChangeText={onChangeText}
         returnKeyType="search"
         autoCorrect={false}
-        accessibilityLabel={placeholder}
+        accessibilityLabel={resolvedPlaceholder}
       />
       {value.length > 0 && (
         <TouchableOpacity
           onPress={() => onChangeText('')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityLabel="Limpar busca"
+          accessibilityLabel={t('common.clearSearchA11y')}
           accessibilityRole="button"
         >
           <Ionicons name="close-circle" size={18} color={Colors.textSecondary} />

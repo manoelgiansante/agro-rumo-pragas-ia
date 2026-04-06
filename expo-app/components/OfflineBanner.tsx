@@ -9,6 +9,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { Colors, Spacing, FontSize, FontWeight } from '../constants/theme';
 
@@ -19,6 +20,7 @@ import { Colors, Spacing, FontSize, FontWeight } from '../constants/theme';
 export function OfflineBanner() {
   const { isConnected, isInternetReachable } = useNetworkStatus();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
   // Consider offline if explicitly disconnected OR internet not reachable.
@@ -53,7 +55,7 @@ export function OfflineBanner() {
   return (
     <Animated.View style={[styles.banner, animatedStyle, { paddingTop: insets.top }]}>
       <Ionicons name="cloud-offline-outline" size={16} color={Colors.black} />
-      <Text style={styles.text}>Sem conexao com a internet</Text>
+      <Text style={styles.text}>{t('common.offline')}</Text>
     </Animated.View>
   );
 }

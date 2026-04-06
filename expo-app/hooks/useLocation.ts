@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as Location from 'expo-location';
+import i18n from '../i18n';
 
 interface LocationState {
   location: { latitude: number; longitude: number } | null;
@@ -21,7 +22,7 @@ export function useLocation() {
     if (status !== 'granted') {
       setState((prev) => ({
         ...prev,
-        error: 'Permissao de localizacao negada',
+        error: i18n.t('errors.locationPermissionDenied'),
       }));
       return false;
     }
@@ -67,7 +68,7 @@ export function useLocation() {
 
       return coords;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao obter localizacao';
+      const message = err instanceof Error ? err.message : i18n.t('errors.locationError');
       setState((prev) => ({
         ...prev,
         isLoading: false,

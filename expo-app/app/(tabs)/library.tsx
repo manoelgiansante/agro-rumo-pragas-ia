@@ -194,7 +194,7 @@ export default function LibraryScreen() {
         <TouchableOpacity
           style={[styles.chip, !selectedCrop && styles.chipActive]}
           onPress={() => setSelectedCrop(null)}
-          accessibilityLabel="Todas as culturas"
+          accessibilityLabel={t('library.allCropsA11y')}
           accessibilityRole="button"
           accessibilityState={{ selected: !selectedCrop }}
         >
@@ -207,11 +207,13 @@ export default function LibraryScreen() {
             key={crop.id}
             style={[styles.chip, selectedCrop === crop.id && styles.chipActive]}
             onPress={() => setSelectedCrop(crop.id === selectedCrop ? null : crop.id)}
-            accessibilityLabel={`Filtrar por ${crop.displayName}`}
+            accessibilityLabel={t('library.filterByCrop', { crop: crop.displayName })}
             accessibilityRole="button"
             accessibilityState={{ selected: selectedCrop === crop.id }}
           >
-            <Text style={styles.chipEmoji} accessibilityElementsHidden>{crop.icon}</Text>
+            <Text style={styles.chipEmoji} accessibilityElementsHidden>
+              {crop.icon}
+            </Text>
             <Text style={[styles.chipText, selectedCrop === crop.id && styles.chipTextActive]}>
               {crop.displayName}
             </Text>
@@ -233,9 +235,7 @@ export default function LibraryScreen() {
             <Text style={[styles.emptyTitle, isDark && styles.textDark]}>
               {t('library.noPests')}
             </Text>
-            <Text style={styles.emptyDesc}>
-              Tente buscar com outro termo ou selecione outra cultura
-            </Text>
+            <Text style={styles.emptyDesc}>{t('library.emptyHint')}</Text>
             {(search || selectedCrop) && (
               <TouchableOpacity
                 style={styles.clearFilterBtn}
@@ -246,7 +246,7 @@ export default function LibraryScreen() {
                 activeOpacity={0.7}
               >
                 <Ionicons name="close-circle" size={16} color={Colors.accent} />
-                <Text style={styles.clearFilterText}>Limpar filtros</Text>
+                <Text style={styles.clearFilterText}>{t('library.clearFilters')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -294,7 +294,12 @@ const styles = StyleSheet.create({
   pestScientific: { fontSize: FontSize.caption, color: Colors.textSecondary, fontStyle: 'italic' },
   cropBadge: { fontSize: 20 },
   emptyTitle: { fontSize: FontSize.title3, fontWeight: '700', marginTop: 16 },
-  emptyDesc: { fontSize: FontSize.subheadline, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' },
+  emptyDesc: {
+    fontSize: FontSize.subheadline,
+    color: Colors.textSecondary,
+    marginTop: 4,
+    textAlign: 'center',
+  },
   clearFilterBtn: {
     flexDirection: 'row',
     alignItems: 'center',

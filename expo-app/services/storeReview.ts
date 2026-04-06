@@ -1,6 +1,7 @@
 import * as StoreReview from 'expo-store-review';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
+import i18n from '../i18n';
 
 const DIAGNOSIS_COUNT_KEY = '@rumo_pragas_successful_diagnoses';
 const REVIEW_PROMPTED_KEY = '@rumo_pragas_review_prompted';
@@ -31,23 +32,19 @@ export async function trackSuccessfulDiagnosis(): Promise<void> {
 
     if (Platform.OS === 'web') return;
 
-    Alert.alert(
-      'Este diagnóstico foi útil?',
-      'Sua avaliação nos ajuda a melhorar o app para todos os produtores.',
-      [
-        { text: 'Agora não', style: 'cancel' },
-        {
-          text: 'Sim, avaliar!',
-          onPress: async () => {
-            try {
-              await StoreReview.requestReview();
-            } catch {
-              // Native review dialog may fail silently — that's OK
-            }
-          },
+    Alert.alert(i18n.t('storeReview.title'), i18n.t('storeReview.message'), [
+      { text: i18n.t('storeReview.notNow'), style: 'cancel' },
+      {
+        text: i18n.t('storeReview.yesRate'),
+        onPress: async () => {
+          try {
+            await StoreReview.requestReview();
+          } catch {
+            // Native review dialog may fail silently — that's OK
+          }
         },
-      ],
-    );
+      },
+    ]);
   } catch {
     // Non-critical feature — never crash the app for a review prompt
   }

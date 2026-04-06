@@ -275,15 +275,15 @@ export default function AIChatScreen() {
           onChangeText={setInput}
           multiline
           maxLength={2000}
-          accessibilityLabel="Mensagem para o consultor de pragas"
+          accessibilityLabel={t('chat.inputA11y')}
           accessibilityRole="text"
-          accessibilityHint="Digite sua pergunta sobre pragas agricolas"
+          accessibilityHint={t('chat.inputHint')}
         />
         <TouchableOpacity
           onPress={() => send()}
           disabled={!input.trim() || sending}
           style={[styles.sendBtn, input.trim() && !sending ? styles.sendBtnActive : null]}
-          accessibilityLabel="Enviar mensagem"
+          accessibilityLabel={t('chat.sendA11y')}
           accessibilityRole="button"
           accessibilityState={{ disabled: !input.trim() || sending }}
         >

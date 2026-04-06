@@ -96,7 +96,7 @@ export default function ResultScreen() {
           <TouchableOpacity
             style={[styles.closeBtn, { backgroundColor: Colors.warmAmber }]}
             onPress={() => router.dismissAll()}
-            accessibilityLabel="Voltar para a tela inicial"
+            accessibilityLabel={t('diagnosis.backToHomeA11y')}
             accessibilityRole="button"
           >
             <Text style={styles.closeBtnText}>{t('diagnosis.backToHome')}</Text>
@@ -115,7 +115,7 @@ export default function ResultScreen() {
               name="warning"
               size={44}
               color={Colors.coral}
-              accessibilityLabel="Icone de erro"
+              accessibilityLabel={t('diagnosis.errorIconA11y')}
               accessibilityRole="image"
             />
           </View>
@@ -124,7 +124,7 @@ export default function ResultScreen() {
           <TouchableOpacity
             style={styles.closeBtn}
             onPress={() => router.dismissAll()}
-            accessibilityLabel="Fechar diagnostico"
+            accessibilityLabel={t('diagnosis.closeDiagnosisA11y')}
             accessibilityRole="button"
           >
             <Text style={styles.closeBtnText}>{t('diagnosis.close')}</Text>

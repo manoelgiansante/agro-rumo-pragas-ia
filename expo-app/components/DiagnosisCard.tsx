@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../constants/theme';
 
 export interface DiagnosisItem {
@@ -38,40 +39,26 @@ function getSeverityColor(severity: string): string {
   }
 }
 
-function getSeverityLabel(severity: string): string {
+function getSeverityLabelKey(severity: string): string {
   switch (severity) {
     case 'low':
-      return 'Baixo';
+      return 'severity.low';
     case 'medium':
-      return 'Medio';
+      return 'severity.medium';
     case 'high':
-      return 'Alto';
+      return 'severity.high';
     case 'critical':
-      return 'Critico';
+      return 'severity.critical';
     default:
-      return severity;
+      return 'severity.medium';
   }
 }
 
-function formatDatePtBr(dateStr: string): string {
+function formatDateShort(dateStr: string, monthKeys: string[]): string {
   try {
     const date = new Date(dateStr);
     const day = date.getDate().toString().padStart(2, '0');
-    const months = [
-      'jan',
-      'fev',
-      'mar',
-      'abr',
-      'mai',
-      'jun',
-      'jul',
-      'ago',
-      'set',
-      'out',
-      'nov',
-      'dez',
-    ];
-    const month = months[date.getMonth()];
+    const month = monthKeys[date.getMonth()];
     return `${day} ${month}`;
   } catch {
     return dateStr;
@@ -98,25 +85,22 @@ function getCropEmoji(crop: string): string {
   return emojiMap[crop] ?? '🌱';
 }
 
-function getCropDisplayName(crop: string): string {
-  const nameMap: Record<string, string> = {
-    soja: 'Soja',
-    milho: 'Milho',
-    cafe: 'Cafe',
-    algodao: 'Algodao',
-    cana: 'Cana',
-    trigo: 'Trigo',
-    arroz: 'Arroz',
-    feijao: 'Feijao',
-    batata: 'Batata',
-    tomate: 'Tomate',
-    mandioca: 'Mandioca',
-    citros: 'Citros',
-    uva: 'Uva',
-    banana: 'Banana',
-  };
-  return nameMap[crop] ?? crop;
-}
+const CROP_NAME_KEYS: Record<string, string> = {
+  soja: 'crops.soja',
+  milho: 'crops.milho',
+  cafe: 'crops.cafe',
+  algodao: 'crops.algodao',
+  cana: 'crops.cana',
+  trigo: 'crops.trigo',
+  arroz: 'crops.arroz',
+  feijao: 'crops.feijao',
+  batata: 'crops.batata',
+  tomate: 'crops.tomate',
+  mandioca: 'crops.mandioca',
+  citros: 'crops.citros',
+  uva: 'crops.uva',
+  banana: 'crops.banana',
+};
 
 function parseSeverityFromNotes(notes?: string): string {
   if (!notes) return 'medium';
@@ -143,10 +127,27 @@ export const DiagnosisCard = React.memo(function DiagnosisCard({
   compact = false,
 }: DiagnosisCardProps) {
   const isDark = useColorScheme() === 'dark';
+  const { t } = useTranslation();
   const severity = diagnosis.severity || parseSeverityFromNotes(diagnosis.notes);
   const severityColor = getSeverityColor(severity);
   const isHealthy = diagnosis.is_healthy ?? diagnosis.pest_id === 'Healthy';
-  const displayName = parseNameFromNotes(diagnosis.notes) || diagnosis.pest_name || 'Diagnostico';
+  const displayName =
+    parseNameFromNotes(diagnosis.notes) || diagnosis.pest_name || t('diagnosis.diagnosisLabel');
+  const monthKeys = [
+    t('common.monthJan'),
+    t('common.monthFeb'),
+    t('common.monthMar'),
+    t('common.monthApr'),
+    t('common.monthMay'),
+    t('common.monthJun'),
+    t('common.monthJul'),
+    t('common.monthAug'),
+    t('common.monthSep'),
+    t('common.monthOct'),
+    t('common.monthNov'),
+    t('common.monthDec'),
+  ];
+  const getCropName = (crop: string) => (CROP_NAME_KEYS[crop] ? t(CROP_NAME_KEYS[crop]) : crop);
 
   return (
     <View
@@ -158,7 +159,7 @@ export const DiagnosisCard = React.memo(function DiagnosisCard({
         },
       ]}
       accessible
-      accessibilityLabel={`${displayName}, ${diagnosis.crop ? getCropDisplayName(diagnosis.crop) : 'cultura nao informada'}, confianca ${Math.round((diagnosis.confidence ?? 0) * 100)} por cento, severidade ${getSeverityLabel(severity)}, ${formatDatePtBr(diagnosis.created_at)}`}
+      accessibilityLabel={`${displayName}, ${diagnosis.crop ? getCropName(diagnosis.crop) : t('diagnosis.cropNotInformed')}, ${t('diagnosis.confidenceA11y', { pct: Math.round((diagnosis.confidence ?? 0) * 100) })}, ${t('severity.label')} ${t(getSeverityLabelKey(severity))}, ${formatDateShort(diagnosis.created_at, monthKeys)}`}
       accessibilityRole="summary"
     >
       <View style={[styles.iconBox, { backgroundColor: `${severityColor}15` }]}>
@@ -178,7 +179,7 @@ export const DiagnosisCard = React.memo(function DiagnosisCard({
           {diagnosis.crop ? (
             <View style={styles.cropBadge}>
               <Text style={styles.cropEmoji}>{getCropEmoji(diagnosis.crop)}</Text>
-              <Text style={styles.cropText}>{getCropDisplayName(diagnosis.crop)}</Text>
+              <Text style={styles.cropText}>{getCropName(diagnosis.crop)}</Text>
             </View>
           ) : null}
 
@@ -188,9 +189,9 @@ export const DiagnosisCard = React.memo(function DiagnosisCard({
       </View>
 
       <View style={styles.rightSection}>
-        <Text style={styles.date}>{formatDatePtBr(diagnosis.created_at)}</Text>
+        <Text style={styles.date}>{formatDateShort(diagnosis.created_at, monthKeys)}</Text>
         <Text style={[styles.severityLabel, { color: severityColor }]}>
-          {getSeverityLabel(severity)}
+          {t(getSeverityLabelKey(severity))}
         </Text>
         <View style={[styles.severityBar, { backgroundColor: severityColor }]} />
       </View>

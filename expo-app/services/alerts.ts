@@ -1,4 +1,5 @@
 import type { WeatherData } from './weather';
+import i18n from '../i18n';
 
 export type AlertSeverity = 'high' | 'medium' | 'low';
 
@@ -15,11 +16,11 @@ export interface PestAlert {
 
 interface AlertRule {
   id: string;
-  title: string;
-  description: string;
+  titleKey: string;
+  descKey: string;
+  cropKey: string;
   severity: AlertSeverity;
   icon: string;
-  cropAffected: string;
   condition: (weather: WeatherData) => boolean;
 }
 
@@ -27,107 +28,97 @@ const ALERT_RULES: AlertRule[] = [
   // HIGH severity
   {
     id: 'ferrugem_alta_umidade',
-    title: 'Risco elevado de ferrugem',
-    description:
-      'Umidade acima de 80% e temperatura acima de 25\u00B0C criam condicoes ideais para ferrugem asiatica. Monitore as folhas inferiores e aplique fungicida preventivo.',
+    titleKey: 'alerts.ferrugem_title',
+    descKey: 'alerts.ferrugem_desc',
+    cropKey: 'alerts.ferrugem_crop',
     severity: 'high',
     icon: 'alert-circle',
-    cropAffected: 'Soja, Cafe, Trigo',
     condition: (w) => w.humidity > 80 && w.temperature > 25,
   },
   {
     id: 'doencas_fungicas_chuva',
-    title: 'Condicoes favoraveis para doencas fungicas',
-    description:
-      'Chuvas frequentes com temperaturas amenas favorecem o desenvolvimento de fungos como cercospora, antracnose e mancha-alvo. Priorize inspeccao foliar.',
+    titleKey: 'alerts.fungicas_title',
+    descKey: 'alerts.fungicas_desc',
+    cropKey: 'alerts.fungicas_crop',
     severity: 'high',
     icon: 'water',
-    cropAffected: 'Soja, Milho, Feijao',
     condition: (w) => w.rain > 5 && w.temperature > 22 && w.humidity > 75,
   },
   {
     id: 'mofo_branco',
-    title: 'Alerta de mofo branco (Sclerotinia)',
-    description:
-      'Umidade persistente acima de 85% com temperaturas entre 15-25\u00B0C favorece a esclerotinia. Verifique areas com sombreamento e alta densidade de plantio.',
+    titleKey: 'alerts.mofo_title',
+    descKey: 'alerts.mofo_desc',
+    cropKey: 'alerts.mofo_crop',
     severity: 'high',
     icon: 'snow',
-    cropAffected: 'Soja, Feijao, Girassol',
     condition: (w) => w.humidity > 85 && w.temperature >= 15 && w.temperature <= 25,
   },
 
   // MEDIUM severity
   {
     id: 'acaros_calor_seco',
-    title: 'Risco de acaros e tripes',
-    description:
-      'Tempo quente e seco favorece a proliferacao de acaros e tripes. Observe a face inferior das folhas para sinais de ataque.',
+    titleKey: 'alerts.acaros_title',
+    descKey: 'alerts.acaros_desc',
+    cropKey: 'alerts.acaros_crop',
     severity: 'medium',
     icon: 'bug',
-    cropAffected: 'Soja, Algodao, Citros',
     condition: (w) => w.temperature > 30 && w.humidity < 50,
   },
   {
     id: 'cigarrinha_milho',
-    title: 'Condicoes favoraveis para cigarrinha',
-    description:
-      'Temperaturas entre 25-32\u00B0C com periodos secos favorecem a cigarrinha-do-milho, vetor do complexo de enfezamentos. Avalie a necessidade de controle.',
+    titleKey: 'alerts.cigarrinha_title',
+    descKey: 'alerts.cigarrinha_desc',
+    cropKey: 'alerts.cigarrinha_crop',
     severity: 'medium',
     icon: 'bug',
-    cropAffected: 'Milho',
     condition: (w) => w.temperature >= 25 && w.temperature <= 32 && w.humidity < 65 && w.rain < 2,
   },
   {
     id: 'lagarta_umidade_moderada',
-    title: 'Atencao com lagartas desfolhadoras',
-    description:
-      'Condicoes climaticas moderadas com umidade entre 60-80% e temperatura amena podem favorecer oviposicao de lagartas. Monitorar periodicamente.',
+    titleKey: 'alerts.lagarta_title',
+    descKey: 'alerts.lagarta_desc',
+    cropKey: 'alerts.lagarta_crop',
     severity: 'medium',
     icon: 'leaf',
-    cropAffected: 'Soja, Milho, Algodao',
     condition: (w) =>
       w.humidity >= 60 && w.humidity <= 80 && w.temperature >= 22 && w.temperature <= 32,
   },
   {
     id: 'percevejos_graos',
-    title: 'Periodo de risco para percevejos',
-    description:
-      'Temperaturas acima de 28\u00B0C com baixa precipitacao aumentam a atividade de percevejos sugadores. Verifique os graos e vagens.',
+    titleKey: 'alerts.percevejos_title',
+    descKey: 'alerts.percevejos_desc',
+    cropKey: 'alerts.percevejos_crop',
     severity: 'medium',
     icon: 'shield',
-    cropAffected: 'Soja, Milho',
     condition: (w) => w.temperature > 28 && w.dailyPrecipitationSum < 3,
   },
 
   // LOW severity
   {
     id: 'vento_dispersao',
-    title: 'Ventos podem dispersar pragas',
-    description:
-      'Ventos acima de 25 km/h podem transportar esporos de fungos e insetos adultos para novas areas. Observe bordaduras e areas expostas.',
+    titleKey: 'alerts.vento_title',
+    descKey: 'alerts.vento_desc',
+    cropKey: 'alerts.vento_crop',
     severity: 'low',
     icon: 'leaf',
-    cropAffected: 'Todas as culturas',
     condition: (w) => w.windSpeed > 25,
   },
   {
     id: 'geada_estresse',
-    title: 'Baixas temperaturas e estresse da planta',
-    description:
-      'Temperaturas abaixo de 10\u00B0C enfraquecem as plantas, tornando-as mais suscetíveis a patogenos oportunistas apos a recuperacao.',
+    titleKey: 'alerts.geada_title',
+    descKey: 'alerts.geada_desc',
+    cropKey: 'alerts.geada_crop',
     severity: 'low',
     icon: 'thermometer',
-    cropAffected: 'Cafe, Citros, Hortalicas',
     condition: (w) => w.temperature < 10,
   },
   {
     id: 'condicoes_favoraveis_geral',
-    title: 'Condicoes estaveis - bom momento para monitorar',
-    description:
-      'O clima atual esta estavel. Aproveite para realizar inspeccoes de rotina e avaliar o NDE (Nivel de Dano Economico) de pragas presentes.',
+    titleKey: 'alerts.estavel_title',
+    descKey: 'alerts.estavel_desc',
+    cropKey: 'alerts.estavel_crop',
     severity: 'low',
     icon: 'checkmark-circle',
-    cropAffected: 'Todas as culturas',
     condition: (w) =>
       w.temperature >= 18 &&
       w.temperature <= 28 &&
@@ -157,12 +148,11 @@ export function generateForecastAlerts(weather: WeatherData): PestAlert[] {
       if (consecutiveWetWarm >= 3) {
         alerts.push({
           id: 'forecast_doencas_fungicas_prolongado',
-          title: 'Risco prolongado de doencas fungicas nos proximos dias',
-          description:
-            'A previsao indica 3 ou mais dias consecutivos com chuvas acima de 5mm e temperaturas acima de 22\u00B0C. Estas condicoes favorecem fortemente o desenvolvimento de doencas fungicas como ferrugem, cercospora e antracnose. Antecipe aplicacoes preventivas de fungicida.',
+          title: i18n.t('alerts.forecast_fungicas_title'),
+          description: i18n.t('alerts.forecast_fungicas_desc'),
           severity: 'high',
           icon: 'water',
-          cropAffected: 'Soja, Milho, Feijao, Cafe',
+          cropAffected: i18n.t('alerts.forecast_fungicas_crop'),
           date: now,
           isForecast: true,
         });
@@ -178,11 +168,11 @@ export function generateForecastAlerts(weather: WeatherData): PestAlert[] {
   if (frostDay) {
     alerts.push({
       id: 'forecast_geada',
-      title: 'Alerta de geada nos proximos dias',
-      description: `Previsao de temperatura minima abaixo de 5\u00B0C no dia ${frostDay.date}. Geadas podem causar danos severos em culturas sensiveis. Considere medidas de protecao como irrigacao por aspersao ou cobertura de mudas.`,
+      title: i18n.t('alerts.forecast_geada_title'),
+      description: i18n.t('alerts.forecast_geada_desc', { date: frostDay.date }),
       severity: 'high',
       icon: 'snow',
-      cropAffected: 'Cafe, Citros, Hortalicas, Banana',
+      cropAffected: i18n.t('alerts.forecast_geada_crop'),
       date: now,
       isForecast: true,
     });
@@ -197,12 +187,11 @@ export function generateForecastAlerts(weather: WeatherData): PestAlert[] {
       if (consecutiveDryHot >= 3) {
         alerts.push({
           id: 'forecast_seco_acaros',
-          title: 'Periodo seco prolongado - monitore acaros e tripes',
-          description:
-            'A previsao indica 3 ou mais dias sem chuva com temperaturas acima de 30\u00B0C. Condicoes de seca prolongada favorecem a proliferacao de acaros e tripes. Intensifique o monitoramento da face inferior das folhas.',
+          title: i18n.t('alerts.forecast_seco_title'),
+          description: i18n.t('alerts.forecast_seco_desc'),
           severity: 'medium',
           icon: 'bug',
-          cropAffected: 'Soja, Algodao, Citros, Milho',
+          cropAffected: i18n.t('alerts.forecast_seco_crop'),
           date: now,
           isForecast: true,
         });
@@ -230,11 +219,11 @@ export function generateAlerts(weather: WeatherData): PestAlert[] {
   const currentAlerts: PestAlert[] = ALERT_RULES.filter((rule) => rule.condition(weather)).map(
     (rule) => ({
       id: rule.id,
-      title: rule.title,
-      description: rule.description,
+      title: i18n.t(rule.titleKey),
+      description: i18n.t(rule.descKey),
       severity: rule.severity,
       icon: rule.icon,
-      cropAffected: rule.cropAffected,
+      cropAffected: i18n.t(rule.cropKey),
       date: now,
     }),
   );

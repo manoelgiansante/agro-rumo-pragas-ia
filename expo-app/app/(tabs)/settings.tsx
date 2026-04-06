@@ -221,7 +221,7 @@ export default function SettingsScreen() {
             <Text style={styles.profileEmail}>{userEmail}</Text>
             <View style={styles.roleBadge}>
               <Ionicons name="shield-checkmark" size={10} color={Colors.accent} />
-              <Text style={styles.roleText}>Produtor Rural</Text>
+              <Text style={styles.roleText}>{t('settings.farmerRole')}</Text>
             </View>
           </View>
         </View>
@@ -308,7 +308,7 @@ export default function SettingsScreen() {
               value={pushEnabled}
               onValueChange={handlePushToggle}
               trackColor={{ true: Colors.accent }}
-              accessibilityLabel="Notificacoes push"
+              accessibilityLabel={t('settings.pushNotifA11y')}
               accessibilityRole="switch"
               accessibilityState={{ checked: pushEnabled }}
             />
@@ -347,7 +347,7 @@ export default function SettingsScreen() {
       <TouchableOpacity
         style={styles.signOutBtn}
         onPress={handleSignOut}
-        accessibilityLabel="Sair da conta"
+        accessibilityLabel={t('settings.signOutA11y')}
         accessibilityRole="button"
       >
         <Ionicons
@@ -362,9 +362,9 @@ export default function SettingsScreen() {
       <TouchableOpacity
         style={styles.deleteAccountBtn}
         onPress={handleDeleteAccount}
-        accessibilityLabel="Excluir conta permanentemente"
+        accessibilityLabel={t('settings.deleteAccountA11y')}
         accessibilityRole="button"
-        accessibilityHint="Solicita a exclusao de todos os seus dados conforme a LGPD"
+        accessibilityHint={t('settings.deleteAccountHint')}
       >
         <Ionicons name="trash-outline" size={18} color="#FFF" accessibilityElementsHidden />
         <Text style={styles.deleteAccountText}>{t('settings.deleteAccount')}</Text>

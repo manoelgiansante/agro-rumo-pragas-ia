@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors, FontSize, FontWeight, BorderRadius } from '../constants/theme';
 
 interface ConfidenceBarProps {
@@ -15,19 +16,22 @@ function getBarColor(value: number): string {
 export function ConfidenceBar({ value }: ConfidenceBarProps) {
   const color = getBarColor(value);
   const pct = Math.round(value * 100);
+  const { t } = useTranslation();
 
   return (
     <View
       style={styles.container}
       accessible
-      accessibilityLabel={`Confianca: ${pct} por cento`}
+      accessibilityLabel={t('diagnosis.confidenceA11y', { pct })}
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: pct }}
     >
       <View style={styles.track} accessibilityElementsHidden>
         <View style={[styles.fill, { width: `${Math.min(pct, 100)}%`, backgroundColor: color }]} />
       </View>
-      <Text style={styles.label} accessibilityElementsHidden>{pct}%</Text>
+      <Text style={styles.label} accessibilityElementsHidden>
+        {pct}%
+      </Text>
     </View>
   );
 }

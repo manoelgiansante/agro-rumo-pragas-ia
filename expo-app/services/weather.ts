@@ -23,38 +23,49 @@ export interface WeatherData {
   forecast?: DailyForecast[];
 }
 
-const DAY_ABBREVS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+import i18n from '../i18n';
 
-const WEATHER_CODE_MAP: Record<number, { description: string; icon: string }> = {
-  0: { description: 'Ceu limpo', icon: 'sunny' },
-  1: { description: 'Predominantemente limpo', icon: 'partly-sunny' },
-  2: { description: 'Parcialmente nublado', icon: 'partly-sunny' },
-  3: { description: 'Nublado', icon: 'cloudy' },
-  45: { description: 'Nevoeiro', icon: 'cloudy' },
-  48: { description: 'Nevoeiro com geada', icon: 'cloudy' },
-  51: { description: 'Garoa leve', icon: 'rainy' },
-  53: { description: 'Garoa moderada', icon: 'rainy' },
-  55: { description: 'Garoa intensa', icon: 'rainy' },
-  56: { description: 'Garoa congelante leve', icon: 'rainy' },
-  57: { description: 'Garoa congelante intensa', icon: 'rainy' },
-  61: { description: 'Chuva leve', icon: 'rainy' },
-  63: { description: 'Chuva moderada', icon: 'rainy' },
-  65: { description: 'Chuva forte', icon: 'rainy' },
-  66: { description: 'Chuva congelante leve', icon: 'rainy' },
-  67: { description: 'Chuva congelante forte', icon: 'rainy' },
-  71: { description: 'Neve leve', icon: 'snow' },
-  73: { description: 'Neve moderada', icon: 'snow' },
-  75: { description: 'Neve forte', icon: 'snow' },
-  77: { description: 'Granizo', icon: 'snow' },
-  80: { description: 'Pancadas leves', icon: 'thunderstorm' },
-  81: { description: 'Pancadas moderadas', icon: 'thunderstorm' },
-  82: { description: 'Pancadas violentas', icon: 'thunderstorm' },
-  85: { description: 'Neve fraca', icon: 'snow' },
-  86: { description: 'Neve forte', icon: 'snow' },
-  95: { description: 'Tempestade', icon: 'thunderstorm' },
-  96: { description: 'Tempestade com granizo leve', icon: 'thunderstorm' },
-  99: { description: 'Tempestade com granizo forte', icon: 'thunderstorm' },
+function getDayAbbrevs(): string[] {
+  return i18n.t('weather.days', { returnObjects: true }) as unknown as string[];
+}
+
+/** Map weather code → icon (static) + i18n description key */
+const WEATHER_CODE_ICON: Record<number, { key: string; icon: string }> = {
+  0: { key: 'weather.clear', icon: 'sunny' },
+  1: { key: 'weather.mostlyClear', icon: 'partly-sunny' },
+  2: { key: 'weather.partlyCloudy', icon: 'partly-sunny' },
+  3: { key: 'weather.overcast', icon: 'cloudy' },
+  45: { key: 'weather.fog', icon: 'cloudy' },
+  48: { key: 'weather.rimeFog', icon: 'cloudy' },
+  51: { key: 'weather.drizzleLight', icon: 'rainy' },
+  53: { key: 'weather.drizzleMod', icon: 'rainy' },
+  55: { key: 'weather.drizzleHeavy', icon: 'rainy' },
+  56: { key: 'weather.freezingDrizzleLight', icon: 'rainy' },
+  57: { key: 'weather.freezingDrizzleHeavy', icon: 'rainy' },
+  61: { key: 'weather.rainLight', icon: 'rainy' },
+  63: { key: 'weather.rainMod', icon: 'rainy' },
+  65: { key: 'weather.rainHeavy', icon: 'rainy' },
+  66: { key: 'weather.freezingRainLight', icon: 'rainy' },
+  67: { key: 'weather.freezingRainHeavy', icon: 'rainy' },
+  71: { key: 'weather.snowLight', icon: 'snow' },
+  73: { key: 'weather.snowMod', icon: 'snow' },
+  75: { key: 'weather.snowHeavy', icon: 'snow' },
+  77: { key: 'weather.hail', icon: 'snow' },
+  80: { key: 'weather.showersLight', icon: 'thunderstorm' },
+  81: { key: 'weather.showersMod', icon: 'thunderstorm' },
+  82: { key: 'weather.showersViolent', icon: 'thunderstorm' },
+  85: { key: 'weather.snowShowersLight', icon: 'snow' },
+  86: { key: 'weather.snowShowersHeavy', icon: 'snow' },
+  95: { key: 'weather.thunderstorm', icon: 'thunderstorm' },
+  96: { key: 'weather.thunderstormHailLight', icon: 'thunderstorm' },
+  99: { key: 'weather.thunderstormHailHeavy', icon: 'thunderstorm' },
 };
+
+function getWeatherDescription(code: number): { description: string; icon: string } {
+  const entry = WEATHER_CODE_ICON[code];
+  if (!entry) return { description: i18n.t('weather.unknown'), icon: 'partly-sunny' };
+  return { description: i18n.t(entry.key), icon: entry.icon };
+}
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -127,18 +138,16 @@ export async function fetchWeather(
     const current = json.current;
     const daily = json.daily;
     const code = current.weather_code as number;
-    const mapped = WEATHER_CODE_MAP[code] ?? { description: 'Desconhecido', icon: 'partly-sunny' };
+    const mapped = getWeatherDescription(code);
 
+    const dayAbbrevs = getDayAbbrevs();
     const forecast: DailyForecast[] = (daily.time as string[]).map((dateStr: string, i: number) => {
       const dayCode = daily.weather_code[i] as number;
-      const dayMapped = WEATHER_CODE_MAP[dayCode] ?? {
-        description: 'Desconhecido',
-        icon: 'partly-sunny',
-      };
+      const dayMapped = getWeatherDescription(dayCode);
       const date = new Date(dateStr + 'T12:00:00');
       return {
         date: dateStr,
-        dayAbbrev: i === 0 ? 'Hoje' : DAY_ABBREVS[date.getDay()],
+        dayAbbrev: i === 0 ? i18n.t('weather.today') : dayAbbrevs[date.getDay()],
         weatherCode: dayCode,
         temperatureMax: daily.temperature_2m_max[i],
         temperatureMin: daily.temperature_2m_min[i],
@@ -168,20 +177,20 @@ export async function fetchWeather(
     return weatherData;
   } catch (error) {
     console.error(
-      '[Weather] Falha ao buscar dados meteorologicos:',
+      '[Weather] Failed to fetch weather data:',
       error instanceof Error ? error.message : error,
     );
 
     // Network failed -- return stale cache if available so the UI still shows something
     const stale = await getStaleCache();
     if (stale) {
-      console.info('[Weather] Usando cache expirado como fallback');
+      console.info('[Weather] Using stale cache as fallback');
       return stale;
     }
 
     // No cache at all -- throw so the caller can show an error state
     throw new WeatherError(
-      'Nao foi possivel obter dados meteorologicos. Verifique sua conexao.',
+      i18n.t('errors.weatherUnavailable'),
       error instanceof Error ? error : undefined,
     );
   }

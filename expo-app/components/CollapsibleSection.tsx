@@ -10,6 +10,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../constants/theme';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -33,6 +34,7 @@ export function CollapsibleSection({
 }: CollapsibleSectionProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const isDark = useColorScheme() === 'dark';
+  const { t } = useTranslation();
 
   const toggle = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -47,7 +49,7 @@ export function CollapsibleSection({
         style={styles.header}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`${title}, ${expanded ? 'expandido' : 'recolhido'}`}
+        accessibilityLabel={`${title}, ${expanded ? t('common.expanded') : t('common.collapsed')}`}
       >
         <View style={styles.headerLeft}>
           <Ionicons name={icon} size={18} color={iconColor} />

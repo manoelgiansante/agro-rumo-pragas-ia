@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import * as authService from '../services/auth';
+import i18n from '../i18n';
 import type { Session, User } from '@supabase/supabase-js';
 
 interface AuthState {
@@ -59,7 +60,7 @@ export function useAuth() {
     try {
       await authService.signIn(email, password);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao fazer login';
+      const message = err instanceof Error ? err.message : i18n.t('auth.loginError');
       setState((prev) => ({ ...prev, isLoading: false, error: message }));
       throw err;
     }
@@ -70,7 +71,7 @@ export function useAuth() {
     try {
       await authService.signUp(email, password, fullName);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao criar conta';
+      const message = err instanceof Error ? err.message : i18n.t('auth.signUpError');
       setState((prev) => ({ ...prev, isLoading: false, error: message }));
       throw err;
     }
@@ -81,7 +82,7 @@ export function useAuth() {
     try {
       await authService.signOut();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao sair';
+      const message = err instanceof Error ? err.message : i18n.t('auth.signOutError');
       setState((prev) => ({ ...prev, isLoading: false, error: message }));
     }
   }, []);
@@ -92,7 +93,7 @@ export function useAuth() {
       await authService.resetPassword(email);
       setState((prev) => ({ ...prev, isLoading: false }));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao enviar email';
+      const message = err instanceof Error ? err.message : i18n.t('auth.resetPasswordError');
       setState((prev) => ({ ...prev, isLoading: false, error: message }));
       throw err;
     }

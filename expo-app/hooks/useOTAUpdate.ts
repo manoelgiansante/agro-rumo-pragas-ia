@@ -1,6 +1,7 @@
 import * as Updates from 'expo-updates';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
+import i18n from '../i18n';
 
 export function useOTAUpdate() {
   const [isChecking, setIsChecking] = useState(false);
@@ -22,14 +23,10 @@ export function useOTAUpdate() {
         setIsDownloading(true);
         await Updates.fetchUpdateAsync();
 
-        Alert.alert(
-          'Atualizacao disponivel',
-          'Uma nova versao do app esta pronta. Deseja reiniciar agora?',
-          [
-            { text: 'Depois', style: 'cancel' },
-            { text: 'Reiniciar', onPress: () => Updates.reloadAsync() },
-          ],
-        );
+        Alert.alert(i18n.t('common.updateAvailable'), i18n.t('common.updateMessage'), [
+          { text: i18n.t('common.later'), style: 'cancel' },
+          { text: i18n.t('common.restart'), onPress: () => Updates.reloadAsync() },
+        ]);
       }
     } catch (e) {
       // Silently fail - OTA updates are not critical

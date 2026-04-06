@@ -1,6 +1,7 @@
 import { Config } from '../constants/config';
 import type { DiagnosisResult } from '../types/diagnosis';
 import { parseNotes } from '../types/diagnosis';
+import i18n from '../i18n';
 
 export type { DiagnosisResult };
 
@@ -11,32 +12,30 @@ function validateBase64ImageSize(base64: string): void {
   const estimatedBytes = Math.ceil((base64.length * 3) / 4);
   if (estimatedBytes > MAX_IMAGE_SIZE_BYTES) {
     const sizeMB = (estimatedBytes / (1024 * 1024)).toFixed(1);
-    throw new Error(
-      `A imagem e muito grande (${sizeMB}MB). O tamanho maximo permitido e 5MB. Tente reduzir a resolucao da foto.`,
-    );
+    throw new Error(i18n.t('errors.imageTooLarge', { size: sizeMB }));
   }
 }
 
 function validateHttpsUrl(url: string): void {
   if (!url || !url.startsWith('https://')) {
-    throw new Error('Configuracao de servidor invalida. Verifique as variaveis de ambiente.');
+    throw new Error(i18n.t('errors.invalidServer'));
   }
 }
 
 function sanitizeErrorMessage(status: number): string {
   switch (true) {
     case status === 401:
-      return 'Sessao expirada. Faca login novamente.';
+      return i18n.t('errors.sessionExpired');
     case status === 403:
-      return 'Voce nao tem permissao para esta acao. Verifique sua assinatura.';
+      return i18n.t('errors.noPermission');
     case status === 413:
-      return 'A imagem enviada e muito grande. Tente reduzir a resolucao.';
+      return i18n.t('errors.imageTooLargeServer');
     case status === 429:
-      return 'Muitas solicitacoes. Aguarde um momento e tente novamente.';
+      return i18n.t('errors.tooManyRequests');
     case status >= 500:
-      return 'O servidor esta temporariamente indisponivel. Tente novamente em alguns minutos.';
+      return i18n.t('errors.serverUnavailable');
     default:
-      return 'Ocorreu um erro ao processar o diagnostico. Tente novamente.';
+      return i18n.t('errors.diagnosisError');
   }
 }
 
@@ -75,13 +74,11 @@ export async function sendDiagnosis(
       try {
         const errorData = await response.json();
         if (errorData.limit !== undefined) {
-          const planLabel = errorData.plan === 'free' ? 'gratuito' : errorData.plan;
-          throw new Error(
-            `Voce atingiu o limite de ${errorData.limit} diagnosticos do plano ${planLabel}. Faca upgrade para continuar.`,
-          );
+          const planLabel = errorData.plan === 'free' ? i18n.t('errors.planFree') : errorData.plan;
+          throw new Error(i18n.t('errors.planLimit', { limit: errorData.limit, plan: planLabel }));
         }
       } catch (e) {
-        if (e instanceof Error && e.message.includes('limite')) throw e;
+        if (e instanceof Error && e.message.includes(String(i18n.t('errors.planFree')))) throw e;
       }
     }
     throw new Error(sanitizeErrorMessage(response.status));
@@ -115,7 +112,7 @@ export async function fetchDiagnoses(
   });
 
   if (!response.ok) {
-    throw new Error(`Falha ao buscar diagnosticos: ${response.status}`);
+    throw new Error(`${i18n.t('errors.fetchDiagnoses')}: ${response.status}`);
   }
 
   const rows = await response.json();
@@ -138,7 +135,7 @@ export async function deleteDiagnosis(token: string, id: string): Promise<void> 
   });
 
   if (!response.ok) {
-    throw new Error(`Falha ao excluir diagnostico: ${response.status}`);
+    throw new Error(`${i18n.t('errors.deleteDiagnosis')}: ${response.status}`);
   }
 }
 
@@ -155,7 +152,7 @@ export async function fetchDiagnosisCount(token: string, userId: string): Promis
   });
 
   if (!response.ok) {
-    throw new Error(`Falha ao buscar contagem: ${response.status}`);
+    throw new Error(`${i18n.t('errors.fetchCount')}: ${response.status}`);
   }
 
   const count = response.headers.get('content-range');

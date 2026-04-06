@@ -204,26 +204,24 @@ export default function HomeScreen() {
             onPress={loadData}
             activeOpacity={0.7}
             style={styles.errorCard}
-            accessibilityLabel="Erro ao carregar dados. Toque para tentar novamente"
+            accessibilityLabel={t('home.errorLoadDataA11y')}
             accessibilityRole="button"
           >
             <Ionicons name="wifi-outline" size={28} color={Colors.coral} />
-            <Text style={styles.errorCardText}>Erro ao carregar dados</Text>
-            <Text style={styles.retryText}>
-              Verifique sua conexao e toque para tentar novamente
-            </Text>
+            <Text style={styles.errorCardText}>{t('home.errorLoadData')}</Text>
+            <Text style={styles.retryText}>{t('home.errorLoadDataHint')}</Text>
           </TouchableOpacity>
         ) : weatherError && !weather ? (
           <TouchableOpacity
             onPress={loadData}
             activeOpacity={0.7}
             style={styles.errorCard}
-            accessibilityLabel="Erro ao carregar clima. Toque para tentar novamente"
+            accessibilityLabel={t('home.errorLoadWeatherA11y')}
             accessibilityRole="button"
           >
             <Ionicons name="cloud-offline-outline" size={22} color={Colors.coral} />
-            <Text style={styles.errorCardText}>Erro ao carregar clima</Text>
-            <Text style={styles.retryText}>Toque para tentar novamente</Text>
+            <Text style={styles.errorCardText}>{t('home.errorLoadWeather')}</Text>
+            <Text style={styles.retryText}>{t('home.retryTap')}</Text>
           </TouchableOpacity>
         ) : null}
         {weather && <WeatherCard weather={weather} />}
@@ -231,9 +229,9 @@ export default function HomeScreen() {
         <TouchableOpacity
           onPress={() => router.push('/diagnosis/camera')}
           activeOpacity={0.8}
-          accessibilityLabel="Diagnosticar praga. Tire uma foto ou escolha da galeria"
+          accessibilityLabel={t('home.diagnosePestA11y')}
           accessibilityRole="button"
-          accessibilityHint="Toque duas vezes para abrir a camera"
+          accessibilityHint={t('home.diagnosePestHint')}
         >
           <PremiumCard>
             <View style={styles.scanRow}>

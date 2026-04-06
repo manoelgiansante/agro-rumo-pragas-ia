@@ -1,30 +1,31 @@
 import React from 'react';
 import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
 import type { PestAlert, AlertSeverity } from '../services/alerts';
 
 const SEVERITY_CONFIG: Record<
   AlertSeverity,
-  { bg: string; border: string; text: string; label: string }
+  { bg: string; border: string; text: string; labelKey: string }
 > = {
   high: {
     bg: 'rgba(240, 102, 82, 0.10)',
     border: 'rgba(240, 102, 82, 0.30)',
     text: '#D94432',
-    label: 'Alto',
+    labelKey: 'severity.high',
   },
   medium: {
     bg: 'rgba(235, 176, 38, 0.10)',
     border: 'rgba(235, 176, 38, 0.30)',
     text: '#C49520',
-    label: 'Medio',
+    labelKey: 'severity.medium',
   },
   low: {
     bg: 'rgba(26, 150, 107, 0.10)',
     border: 'rgba(26, 150, 107, 0.30)',
     text: '#0F6B4D',
-    label: 'Baixo',
+    labelKey: 'severity.low',
   },
 };
 
@@ -34,16 +35,18 @@ interface AlertCardProps {
 
 export const AlertCard = React.memo(function AlertCard({ alert }: AlertCardProps) {
   const isDark = useColorScheme() === 'dark';
+  const { t } = useTranslation();
   const config = SEVERITY_CONFIG[alert.severity];
+  const severityLabel = t(config.labelKey);
 
   const timeAgo = () => {
     const diff = Date.now() - new Date(alert.date).getTime();
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'Agora';
-    if (minutes < 60) return `${minutes}min atras`;
+    if (minutes < 1) return t('common.now');
+    if (minutes < 60) return t('common.minutesAgo', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h atras`;
-    return `${Math.floor(hours / 24)}d atras`;
+    if (hours < 24) return t('common.hoursAgo', { count: hours });
+    return t('common.daysAgo', { count: Math.floor(hours / 24) });
   };
 
   return (
@@ -57,7 +60,12 @@ export const AlertCard = React.memo(function AlertCard({ alert }: AlertCardProps
         isDark && styles.cardDark,
       ]}
       accessible
-      accessibilityLabel={`Alerta ${config.label}: ${alert.title}. ${alert.description}. Cultura afetada: ${alert.cropAffected}`}
+      accessibilityLabel={t('alerts.cardA11y', {
+        severity: severityLabel,
+        title: alert.title,
+        description: alert.description,
+        crop: alert.cropAffected,
+      })}
       accessibilityRole="alert"
     >
       <View style={styles.header}>
@@ -75,11 +83,11 @@ export const AlertCard = React.memo(function AlertCard({ alert }: AlertCardProps
                 { backgroundColor: config.bg, borderColor: config.border },
               ]}
             >
-              <Text style={[styles.severityText, { color: config.text }]}>{config.label}</Text>
+              <Text style={[styles.severityText, { color: config.text }]}>{severityLabel}</Text>
             </View>
             {alert.isForecast && (
               <View style={styles.forecastBadge}>
-                <Text style={styles.forecastBadgeText}>Previsao</Text>
+                <Text style={styles.forecastBadgeText}>{t('alerts.forecast')}</Text>
               </View>
             )}
             <Text style={styles.timestamp}>{timeAgo()}</Text>

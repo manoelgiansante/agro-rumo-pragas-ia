@@ -16,8 +16,10 @@ import { Colors, Spacing, BorderRadius, FontSize, Gradients } from '../../consta
 import { CROPS, CropType } from '../../constants/crops';
 import { SearchInput } from '../../components/SearchInput';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useTranslation } from 'react-i18next';
 
 export default function CropSelectScreen() {
+  const { t } = useTranslation();
   const { imageUri, imageBase64 } = useLocalSearchParams<{
     imageUri: string;
     imageBase64: string;
@@ -57,30 +59,26 @@ export default function CropSelectScreen() {
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}
-          accessibilityLabel="Voltar"
+          accessibilityLabel={t('cropSelect.back')}
           accessibilityRole="button"
         >
           <Ionicons name="chevron-back" size={22} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerText}>Selecionar Cultura</Text>
+        <Text style={styles.headerText}>{t('cropSelect.title')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
       {imageUri && (
-        <View
-          style={styles.preview}
-          accessible
-          accessibilityLabel="Imagem selecionada. Escolha a cultura para melhor precisao"
-        >
+        <View style={styles.preview} accessible accessibilityLabel={t('cropSelect.imageA11y')}>
           <Image
             source={{ uri: imageUri }}
             style={styles.previewImage}
-            accessibilityLabel="Foto selecionada para diagnostico"
+            accessibilityLabel={t('cropSelect.photoA11y')}
             accessibilityRole="image"
           />
           <View style={{ flex: 1 }}>
-            <Text style={styles.previewTitle}>Imagem selecionada</Text>
-            <Text style={styles.previewSub}>Escolha a cultura para melhor precisão</Text>
+            <Text style={styles.previewTitle}>{t('cropSelect.imageSelected')}</Text>
+            <Text style={styles.previewSub}>{t('cropSelect.imageSelectedHint')}</Text>
           </View>
           <Ionicons
             name="checkmark-circle"
@@ -92,10 +90,14 @@ export default function CropSelectScreen() {
       )}
 
       <View style={styles.searchRow}>
-        <SearchInput value={search} onChangeText={setSearch} placeholder="Buscar cultura..." />
+        <SearchInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder={t('cropSelect.searchPlaceholder')}
+        />
       </View>
 
-      <Text style={styles.question}>Qual cultura está afetada?</Text>
+      <Text style={styles.question}>{t('cropSelect.question')}</Text>
 
       <FlatList
         data={filtered}
@@ -110,8 +112,8 @@ export default function CropSelectScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="search-outline" size={48} color={Colors.systemGray3} />
-            <Text style={styles.emptyTitle}>Nenhuma cultura encontrada</Text>
-            <Text style={styles.emptyDesc}>Tente buscar com outro termo</Text>
+            <Text style={styles.emptyTitle}>{t('cropSelect.noCrops')}</Text>
+            <Text style={styles.emptyDesc}>{t('cropSelect.noCropsHint')}</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -119,7 +121,7 @@ export default function CropSelectScreen() {
             style={[styles.cropItem, selected.id === item.id && styles.cropItemSelected]}
             onPress={() => handleSelect(item)}
             activeOpacity={0.7}
-            accessibilityLabel={`${item.displayName}${selected.id === item.id ? ', selecionado' : ''}`}
+            accessibilityLabel={`${item.displayName}${selected.id === item.id ? `, ${t('cropSelect.cropSelected', { crop: '' })}` : ''}`}
             accessibilityRole="button"
             accessibilityState={{ selected: selected.id === item.id }}
           >
@@ -140,12 +142,12 @@ export default function CropSelectScreen() {
         <TouchableOpacity
           onPress={startDiagnosis}
           activeOpacity={0.8}
-          accessibilityLabel={`Iniciar diagnostico para ${selected.displayName}`}
+          accessibilityLabel={t('cropSelect.startA11y', { crop: selected.displayName })}
           accessibilityRole="button"
-          accessibilityHint="Envia a imagem para analise por inteligencia artificial"
+          accessibilityHint={t('cropSelect.startHint')}
         >
           <LinearGradient colors={Gradients.hero as any} style={styles.startBtn}>
-            <Text style={styles.startBtnText}>Iniciar Diagnóstico</Text>
+            <Text style={styles.startBtnText}>{t('cropSelect.startDiagnosis')}</Text>
             <Ionicons name="arrow-forward" size={18} color="#FFF" />
           </LinearGradient>
         </TouchableOpacity>

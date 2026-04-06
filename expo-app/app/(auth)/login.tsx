@@ -171,7 +171,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={[styles.segment, mode === 'login' && styles.segmentActive]}
                 onPress={() => switchMode('login')}
-                accessibilityLabel="Entrar"
+                accessibilityLabel={t('auth.loginA11y')}
                 accessibilityRole="button"
                 accessibilityState={{ selected: mode === 'login' }}
               >
@@ -182,7 +182,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={[styles.segment, mode === 'signup' && styles.segmentActive]}
                 onPress={() => switchMode('signup')}
-                accessibilityLabel="Criar conta"
+                accessibilityLabel={t('auth.signupA11y')}
                 accessibilityRole="button"
                 accessibilityState={{ selected: mode === 'signup' }}
               >
@@ -211,14 +211,14 @@ export default function LoginScreen() {
                   />
                   <TextInput
                     style={styles.input}
-                    placeholder="Nome completo"
+                    placeholder={t('auth.fullNamePlaceholder')}
                     placeholderTextColor={Colors.systemGray2}
                     value={fullName}
                     onChangeText={setFullName}
                     autoCapitalize="words"
                     returnKeyType="next"
                     onSubmitEditing={() => emailRef.current?.focus()}
-                    accessibilityLabel="Nome completo"
+                    accessibilityLabel={t('auth.fullNameA11y')}
                     accessibilityRole="text"
                   />
                 </View>
@@ -237,7 +237,7 @@ export default function LoginScreen() {
                 <TextInput
                   ref={emailRef}
                   style={styles.input}
-                  placeholder="Email"
+                  placeholder={t('auth.emailPlaceholder')}
                   placeholderTextColor={Colors.systemGray2}
                   value={email}
                   onChangeText={setEmail}
@@ -246,7 +246,7 @@ export default function LoginScreen() {
                   autoComplete="email"
                   returnKeyType="next"
                   onSubmitEditing={() => passwordRef.current?.focus()}
-                  accessibilityLabel="Endereco de email"
+                  accessibilityLabel={t('auth.emailA11y')}
                   accessibilityRole="text"
                 />
               </View>
@@ -264,7 +264,7 @@ export default function LoginScreen() {
                 <TextInput
                   ref={passwordRef}
                   style={[styles.input, styles.passwordInput]}
-                  placeholder="Senha"
+                  placeholder={t('auth.passwordPlaceholder')}
                   placeholderTextColor={Colors.systemGray2}
                   value={password}
                   onChangeText={setPassword}
@@ -272,7 +272,7 @@ export default function LoginScreen() {
                   autoCapitalize="none"
                   returnKeyType="done"
                   onSubmitEditing={handleSubmit}
-                  accessibilityLabel="Senha"
+                  accessibilityLabel={t('auth.passwordA11y')}
                   accessibilityRole="text"
                 />
                 <TouchableOpacity
@@ -298,9 +298,9 @@ export default function LoginScreen() {
               <TouchableOpacity
                 onPress={handleResetPassword}
                 style={styles.forgotButton}
-                accessibilityLabel="Esqueci minha senha"
+                accessibilityLabel={t('auth.forgotA11y')}
                 accessibilityRole="button"
-                accessibilityHint="Envia um email para redefinir sua senha"
+                accessibilityHint={t('auth.forgotHint')}
               >
                 <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
               </TouchableOpacity>
@@ -313,7 +313,7 @@ export default function LoginScreen() {
                   style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}
                   onPress={() => setAcceptedTerms(!acceptedTerms)}
                   activeOpacity={0.7}
-                  accessibilityLabel="Aceitar termos de uso e politica de privacidade"
+                  accessibilityLabel={t('auth.termsA11y')}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: acceptedTerms }}
                 >
@@ -394,7 +394,7 @@ export default function LoginScreen() {
                   onPress={handleAppleSignIn}
                   disabled={appleLoading}
                   activeOpacity={0.8}
-                  accessibilityLabel="Entrar com Apple"
+                  accessibilityLabel={t('auth.appleA11y')}
                   accessibilityRole="button"
                 >
                   {appleLoading ? (

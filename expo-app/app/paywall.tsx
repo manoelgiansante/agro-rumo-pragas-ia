@@ -30,7 +30,7 @@ export default function PaywallScreen() {
     {
       id: 'free',
       name: t('paywall.plans.free'),
-      price: 'R$ 0',
+      price: t('paywall.plans.freePrice'),
       limit: 3,
       features: [
         t('paywall.plans.freeDiag'),
@@ -41,7 +41,7 @@ export default function PaywallScreen() {
     {
       id: 'pro',
       name: t('paywall.plans.pro'),
-      price: 'R$ 29/mes',
+      price: t('paywall.plans.proPrice'),
       limit: 30,
       popular: true,
       features: [
@@ -55,7 +55,7 @@ export default function PaywallScreen() {
     {
       id: 'enterprise',
       name: t('paywall.plans.enterprise'),
-      price: 'R$ 69/mes',
+      price: t('paywall.plans.enterprisePrice'),
       limit: -1,
       features: [
         t('paywall.plans.unlimitedDiag'),

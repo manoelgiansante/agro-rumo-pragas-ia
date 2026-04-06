@@ -111,7 +111,7 @@ export default function HistoryScreen() {
           onPress={loadDiagnoses}
           activeOpacity={0.7}
           style={styles.retryButton}
-          accessibilityLabel="Tentar novamente"
+          accessibilityLabel={t('history.retryA11y')}
           accessibilityRole="button"
         >
           <Ionicons name="refresh" size={18} color={Colors.white} accessibilityElementsHidden />

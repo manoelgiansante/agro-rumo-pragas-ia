@@ -2,6 +2,7 @@ import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
+import i18n from '../i18n';
 
 interface Props {
   children: ReactNode;
@@ -45,10 +46,8 @@ export class ErrorBoundary extends Component<Props, State> {
               <Ionicons name="warning-outline" size={48} color={Colors.white} />
             </View>
 
-            <Text style={styles.title}>Algo deu errado</Text>
-            <Text style={styles.description}>
-              Ocorreu um erro inesperado no aplicativo. Tente novamente ou reinicie o app.
-            </Text>
+            <Text style={styles.title}>{i18n.t('errorBoundary.title')}</Text>
+            <Text style={styles.description}>{i18n.t('errorBoundary.description')}</Text>
 
             {__DEV__ && this.state.error && (
               <ScrollView style={styles.errorBox} nestedScrollEnabled>
@@ -62,7 +61,7 @@ export class ErrorBoundary extends Component<Props, State> {
               activeOpacity={0.8}
             >
               <Ionicons name="refresh" size={20} color={Colors.white} />
-              <Text style={styles.retryText}>Tentar novamente</Text>
+              <Text style={styles.retryText}>{i18n.t('errorBoundary.retry')}</Text>
             </TouchableOpacity>
           </View>
         </View>

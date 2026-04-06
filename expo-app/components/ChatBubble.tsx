@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Colors, Gradients, FontSize, Spacing, BorderRadius } from '../constants/theme';
 
 export interface ChatMessageData {
@@ -23,13 +24,14 @@ function formatTime(date: Date): string {
 
 export const ChatBubble = React.memo(function ChatBubble({ message }: ChatBubbleProps) {
   const isDark = useColorScheme() === 'dark';
+  const { t } = useTranslation();
   const isUser = message.role === 'user';
 
   return (
     <View
       style={[styles.row, isUser && styles.rowUser]}
       accessible
-      accessibilityLabel={`${isUser ? 'Voce' : 'Assistente IA'}: ${message.content}`}
+      accessibilityLabel={`${isUser ? t('chat.youLabel') : t('chat.aiAssistantLabel')}: ${message.content}`}
       accessibilityRole="text"
     >
       {!isUser && (
@@ -77,8 +79,14 @@ export const ChatBubble = React.memo(function ChatBubble({ message }: ChatBubble
 });
 
 export function TypingIndicator() {
+  const { t } = useTranslation();
   return (
-    <View style={styles.row} accessible accessibilityLabel="Assistente IA esta digitando" accessibilityRole="text">
+    <View
+      style={styles.row}
+      accessible
+      accessibilityLabel={t('chat.typingA11y')}
+      accessibilityRole="text"
+    >
       <LinearGradient
         colors={Gradients.tech as [string, string]}
         style={styles.avatar}
@@ -89,7 +97,10 @@ export function TypingIndicator() {
         <Ionicons name="sparkles" size={14} color={Colors.white} />
       </LinearGradient>
 
-      <View style={[styles.bubble, styles.bubbleAI, styles.typingBubble]} accessibilityElementsHidden>
+      <View
+        style={[styles.bubble, styles.bubbleAI, styles.typingBubble]}
+        accessibilityElementsHidden
+      >
         <View style={styles.dotsRow}>
           {[0, 1, 2].map((i) => (
             <View key={i} style={[styles.dot, { opacity: 0.4 + i * 0.2 }]} />
