@@ -1,0 +1,1 @@
+cd expo-app && npx lint-staged

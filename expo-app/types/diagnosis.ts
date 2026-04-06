@@ -65,8 +65,10 @@ export interface DiagnosisResult {
   pest_id?: string;
   pest_name?: string;
   confidence?: number;
+  severity?: SeverityLevel;
   image_url?: string;
   notes?: string;
+  metadata?: Record<string, unknown>;
   location_lat?: number;
   location_lng?: number;
   location_name?: string;
@@ -100,8 +102,8 @@ export const CONFIDENCE_LEVELS: Record<
 export function getConfidenceLevel(confidence?: number): ConfidenceLevelName {
   if (!confidence) return 'low';
   if (confidence >= 0.85) return 'high';
-  if (confidence >= 0.60) return 'medium';
-  if (confidence >= 0.40) return 'low';
+  if (confidence >= 0.6) return 'medium';
+  if (confidence >= 0.4) return 'low';
   return 'very_low';
 }
 
@@ -113,10 +115,7 @@ export function getSeverityLevel(result: DiagnosisResult): SeverityLevel {
 
 export function getDisplayName(result: DiagnosisResult): string {
   return (
-    result.parsedNotes?.enrichment?.name_pt ??
-    result.pest_name ??
-    result.pest_id ??
-    'Diagnostico'
+    result.parsedNotes?.enrichment?.name_pt ?? result.pest_name ?? result.pest_id ?? 'Diagnostico'
   );
 }
 
