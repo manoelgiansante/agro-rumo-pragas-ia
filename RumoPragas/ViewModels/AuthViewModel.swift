@@ -126,11 +126,8 @@ class AuthViewModel {
     }
 
     func signOut() {
-        if let token = accessToken {
-            Task {
-                try? await SupabaseService.shared.signOut(token: token)
-            }
-        }
+        let token = accessToken
+        // Clear local state immediately for responsive UX
         accessToken = nil
         currentUser = nil
         KeychainService.delete(key: accessTokenKey)
@@ -140,6 +137,19 @@ class AuthViewModel {
         email = ""
         password = ""
         fullName = ""
+
+        // Revoke server session in background
+        if let token {
+            Task {
+                do {
+                    try await SupabaseService.shared.signOut(token: token)
+                } catch {
+                    #if DEBUG
+                    print("[Auth] Server sign-out failed: \(error). Local state cleared.")
+                    #endif
+                }
+            }
+        }
     }
 
     func validateSession() async {

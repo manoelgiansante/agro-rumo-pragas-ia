@@ -13,6 +13,8 @@ import { isRevenueCatConfigured } from './purchases';
 type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
 type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing';
 
+let listenerRemover: (() => void) | null = null;
+
 let listenerRegistered = false;
 
 /**
@@ -81,7 +83,7 @@ export async function syncSubscriptionToSupabase(userId: string): Promise<void> 
     if (error) {
       console.error('[SubscriptionSync] Failed to sync:', error);
     } else {
-      console.log('[SubscriptionSync] Synced:', info.plan, info.status);
+      console.warn('[SubscriptionSync] Synced:', info.plan, info.status);
     }
   } catch (err) {
     console.error('[SubscriptionSync] Error:', err);
@@ -96,8 +98,8 @@ export function startSubscriptionListener(userId: string): void {
   if (!isRevenueCatConfigured()) return;
   if (listenerRegistered) return;
 
-  Purchases.addCustomerInfoUpdateListener(async (customerInfo: CustomerInfo) => {
-    console.log('[SubscriptionSync] CustomerInfo updated');
+  listenerRemover = Purchases.addCustomerInfoUpdateListener(async (customerInfo: CustomerInfo) => {
+    console.warn('[SubscriptionSync] CustomerInfo updated');
     const info = deriveSubscriptionInfo(customerInfo);
 
     const updatePayload: Record<string, unknown> = {
@@ -125,13 +127,16 @@ export function startSubscriptionListener(userId: string): void {
   });
 
   listenerRegistered = true;
-  console.log('[SubscriptionSync] Listener registered');
+  console.warn('[SubscriptionSync] Listener registered');
 }
 
 /**
  * Stop subscription listener. Call on logout.
  */
 export function stopSubscriptionListener(): void {
-  // RevenueCat SDK doesn't expose removeListener, so we just flag it
+  if (listenerRemover) {
+    listenerRemover();
+    listenerRemover = null;
+  }
   listenerRegistered = false;
 }

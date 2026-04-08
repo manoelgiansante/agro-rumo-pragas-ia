@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
 
   // Only allow POST with service_role authorization
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY)) {
+  if (authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

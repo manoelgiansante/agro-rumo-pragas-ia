@@ -42,9 +42,17 @@ class LocationService: NSObject, CLLocationManagerDelegate {
         if let location {
             return location
         }
+
+        // Race between location callback and timeout
         return await withCheckedContinuation { cont in
             continuations.append(cont)
             manager.requestLocation()
+
+            // Timeout after 10 seconds
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(10))
+                self?.resumeAllContinuations(with: self?.location)
+            }
         }
     }
 
