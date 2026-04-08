@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AIChatView: View {
+    let authVM: AuthViewModel
     @State private var viewModel = AIChatViewModel()
     @FocusState private var isInputFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -18,6 +19,12 @@ struct AIChatView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationBarTitleDisplayMode(.inline)
+            .task {
+                viewModel.accessToken = authVM.accessToken
+            }
+            .onChange(of: authVM.accessToken) { _, newToken in
+                viewModel.accessToken = newToken
+            }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 8) {

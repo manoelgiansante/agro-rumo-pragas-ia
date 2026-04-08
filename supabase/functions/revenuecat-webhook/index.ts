@@ -168,17 +168,23 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Verify webhook authorization
-  if (REVENUECAT_WEBHOOK_SECRET) {
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const expected = `Bearer ${REVENUECAT_WEBHOOK_SECRET}`;
-    if (authHeader !== expected) {
-      console.error("[revenuecat-webhook] Invalid authorization");
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+  // Verify webhook authorization (mandatory)
+  if (!REVENUECAT_WEBHOOK_SECRET) {
+    console.error("[revenuecat-webhook] REVENUECAT_WEBHOOK_SECRET not configured");
+    return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const expected = `Bearer ${REVENUECAT_WEBHOOK_SECRET}`;
+  if (authHeader !== expected) {
+    console.error("[revenuecat-webhook] Invalid authorization");
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   let payload: RevenueCatWebhookPayload;
@@ -264,8 +270,8 @@ Deno.serve(async (req: Request) => {
           plan,
           status,
           provider,
-          period_start: periodStart,
-          period_end: periodEnd,
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
           updated_at: new Date().toISOString(),
           revenuecat_product_id: event.product_id,
           revenuecat_environment: event.environment,

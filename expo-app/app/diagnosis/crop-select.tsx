@@ -10,20 +10,18 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, BorderRadius, FontSize, Gradients } from '../../constants/theme';
 import { CROPS, CropType } from '../../constants/crops';
 import { SearchInput } from '../../components/SearchInput';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useTranslation } from 'react-i18next';
+import { useDiagnosis } from '../../contexts/DiagnosisContext';
 
 export default function CropSelectScreen() {
   const { t } = useTranslation();
-  const { imageUri, imageBase64 } = useLocalSearchParams<{
-    imageUri: string;
-    imageBase64: string;
-  }>();
+  const { imageUri, setCrop } = useDiagnosis();
   const [selected, setSelected] = useState<CropType>(CROPS[0]);
   const [search, setSearch] = useState('');
   const { isTablet, contentMaxWidth, numColumns } = useResponsive();
@@ -39,15 +37,14 @@ export default function CropSelectScreen() {
   };
 
   const startDiagnosis = () => {
-    // Prevent double-tap (race condition from audit ACH)
     if (isNavigating.current) return;
     isNavigating.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setCrop(selected.id);
     router.push({
       pathname: '/diagnosis/loading',
-      params: { imageUri, imageBase64, cropId: selected.id, cropApiName: selected.apiName },
+      params: { cropApiName: selected.apiName },
     });
-    // Reset after short delay in case user navigates back
     setTimeout(() => {
       isNavigating.current = false;
     }, 2000);

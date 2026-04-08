@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Sentry from '@sentry/react-native';
 import { AuthProvider, useAuthContext } from '../contexts/AuthContext';
+import { DiagnosisProvider } from '../contexts/DiagnosisContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { useDiagnosisSync } from '../hooks/useDiagnosisSync';
 import { useOTAUpdate } from '../hooks/useOTAUpdate';
@@ -127,6 +128,7 @@ function RootLayoutNav() {
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="diagnosis" options={{ presentation: 'modal' }} />
         <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
         <Stack.Screen name="terms" />
@@ -140,7 +142,9 @@ function RootLayout() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <RootLayoutNav />
+        <DiagnosisProvider>
+          <RootLayoutNav />
+        </DiagnosisProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

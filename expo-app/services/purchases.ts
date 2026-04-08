@@ -87,6 +87,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<CustomerIn
 export async function checkSubscriptionStatus(): Promise<{
   plan: 'free' | 'pro' | 'enterprise';
   isActive: boolean;
+  error?: string;
 }> {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
@@ -97,8 +98,13 @@ export async function checkSubscriptionStatus(): Promise<{
       return { plan: 'pro', isActive: true };
     }
     return { plan: 'free', isActive: false };
-  } catch {
-    return { plan: 'free', isActive: false };
+  } catch (e) {
+    console.error('[RevenueCat] Failed to check subscription status:', e);
+    return {
+      plan: 'free',
+      isActive: false,
+      error: 'Não foi possível verificar sua assinatura. Tente novamente.',
+    };
   }
 }
 
@@ -109,7 +115,11 @@ export async function restorePurchases(): Promise<CustomerInfo | null> {
   try {
     const customerInfo = await Purchases.restorePurchases();
     return customerInfo;
-  } catch {
-    return null;
+  } catch (e) {
+    console.error('[RevenueCat] Failed to restore purchases:', e);
+    throw new Error(
+      'Não foi possível restaurar suas compras. Verifique sua conexão e tente novamente.',
+      { cause: e },
+    );
   }
 }

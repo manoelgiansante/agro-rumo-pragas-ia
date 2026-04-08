@@ -9,6 +9,7 @@ class AIChatViewModel {
     var isSending = false
     var errorMessage: String?
     var suggestions: [String] = []
+    var accessToken: String?
 
     private let suggestedQuestions = [
         "Como identificar ferrugem asiática na soja?",
@@ -33,6 +34,11 @@ class AIChatViewModel {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isSending else { return }
 
+        guard let token = accessToken, !token.isEmpty else {
+            errorMessage = "Você precisa estar logado para usar o chat."
+            return
+        }
+
         let userMessage = ChatMessage(role: .user, content: text)
         messages.append(userMessage)
         inputText = ""
@@ -49,13 +55,12 @@ class AIChatViewModel {
                 ["role": msg.role.rawValue, "content": msg.content]
             }
 
-            // TODO: Injetar token de autenticacao via AuthViewModel/Environment
-            let response = try await AIChatService.shared.sendMessage(messages: apiMessages, token: nil)
+            let response = try await AIChatService.shared.sendMessage(messages: apiMessages, token: token)
 
             let assistantMessage = ChatMessage(role: .assistant, content: response)
             messages.append(assistantMessage)
         } catch {
-            errorMessage = "Não foi possível obter resposta. Tente novamente."
+            errorMessage = error.localizedDescription
         }
 
         isSending = false

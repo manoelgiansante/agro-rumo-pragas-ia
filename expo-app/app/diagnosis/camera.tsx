@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize, Gradients } from '../../constants/theme';
 import { PremiumCard } from '../../components/PremiumCard';
+import { useDiagnosis } from '../../contexts/DiagnosisContext';
 
 const MAX_DIMENSION = 1024;
 const JPEG_QUALITY = 0.75;
@@ -24,6 +25,7 @@ const JPEG_QUALITY = 0.75;
 export default function CameraScreen() {
   const { t } = useTranslation();
   const [processing, setProcessing] = useState(false);
+  const { setImage } = useDiagnosis();
 
   const compressImage = async (uri: string): Promise<{ uri: string; base64: string }> => {
     const result = await manipulateAsync(
@@ -71,10 +73,8 @@ export default function CameraScreen() {
       setProcessing(true);
       try {
         const compressed = await compressImage(asset.uri);
-        router.push({
-          pathname: '/diagnosis/crop-select',
-          params: { imageUri: compressed.uri, imageBase64: compressed.base64 },
-        });
+        setImage(compressed.uri, compressed.base64);
+        router.push('/diagnosis/crop-select');
       } catch (error) {
         console.error('Image compression failed:', error);
         Alert.alert(t('diagnosis.imageError'), t('diagnosis.imageErrorMsg'));

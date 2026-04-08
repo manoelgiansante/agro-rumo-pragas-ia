@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Colors, FontSize, Gradients } from '../../constants/theme';
+import { FontSize, Gradients } from '../../constants/theme';
 import { sendDiagnosis } from '../../services/diagnosis';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useLocation } from '../../hooks/useLocation';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { addToQueue } from '../../services/diagnosisQueue';
 import { useTranslation } from 'react-i18next';
+import { useDiagnosis } from '../../contexts/DiagnosisContext';
 
 export default function LoadingScreen() {
   const { t } = useTranslation();
@@ -19,10 +20,8 @@ export default function LoadingScreen() {
     t('diagnosis.steps.identifying'),
     t('diagnosis.steps.processing'),
   ];
-  const { imageBase64, cropApiName } = useLocalSearchParams<{
-    imageBase64: string;
-    cropApiName: string;
-  }>();
+  const { cropApiName } = useLocalSearchParams<{ cropApiName: string }>();
+  const { imageBase64 } = useDiagnosis();
   const { session } = useAuthContext();
   const { location, getCurrentLocation } = useLocation();
   const { isConnected } = useNetworkStatus();
@@ -75,7 +74,7 @@ export default function LoadingScreen() {
               longitude: location?.longitude ?? null,
             });
             router.replace({ pathname: '/diagnosis/result', params: { queued: 'true' } });
-          } catch (queueError) {
+          } catch {
             router.replace({
               pathname: '/diagnosis/result',
               params: { error: t('diagnosis.offlineQueueError') },
@@ -93,6 +92,7 @@ export default function LoadingScreen() {
 
     analyze();
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const progressWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
