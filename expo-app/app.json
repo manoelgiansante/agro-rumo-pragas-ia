@@ -1,0 +1,115 @@
+{
+  "expo": {
+    "name": "Rumo Pragas",
+    "slug": "rumo-pragas",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "rumopragas",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A966B"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.agrorumo.rumopragas",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Precisamos da câmera para fotografar pragas e sintomas nas lavouras para diagnóstico por IA.",
+        "NSPhotoLibraryUsageDescription": "Precisamos acessar suas fotos para selecionar imagens de pragas e sintomas para diagnóstico por IA.",
+        "NSLocationWhenInUseUsageDescription": "Usamos sua localização para mostrar condições climáticas da sua região e avaliar riscos de pragas.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A966B"
+      },
+      "package": "com.agrorumo.rumopragas",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 5000,
+      "checkAutomatically": "ON_LOAD",
+      "url": "https://u.expo.dev/876377f3-16a0-468a-aba4-97ef96836f1d"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Precisamos da câmera para fotografar pragas."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Precisamos acessar suas fotos para diagnóstico."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos sua localização para condições climáticas."
+        }
+      ],
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1A966B",
+          "defaultChannel": "pest-alerts",
+          "sounds": []
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          },
+          "android": {
+            "minSdkVersion": 24
+          }
+        }
+      ],
+      "expo-localization",
+      "expo-apple-authentication",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "agrorumo",
+          "project": "rumo-pragas"
+        }
+      ],
+      "@sentry/react-native"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "876377f3-16a0-468a-aba4-97ef96836f1d"
+      },
+      "router": {}
+    },
+    "owner": "manoelgiansante"
+  }
+}

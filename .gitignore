@@ -1,15 +1,17 @@
-# React Native / Expo artifacts (should not exist in Swift projects)
+# React Native / Expo artifacts
 node_modules/
 .expo/
 .bundle/
 android/
 ios/
-babel.config.js
-metro.config.js
-package.json
-package-lock.json
-tsconfig.json
-app.json
+
+# Root-level config files (Swift project root, not expo-app/)
+/babel.config.js
+/metro.config.js
+/package.json
+/package-lock.json
+/tsconfig.json
+/app.json
 
 # Xcode
 build/
