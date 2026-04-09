@@ -65,4 +65,4 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
       - run: npm ci
-      - run: eas build --platform all --profile preview --non-interactive --no-wait
+      - run: eas build --platform all --profile production --non-interactive --no-wait

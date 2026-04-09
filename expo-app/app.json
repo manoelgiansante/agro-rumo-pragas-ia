@@ -15,6 +15,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.agrorumo.rumopragas",
+      "buildNumber": "1",
+      "usesAppleSignIn": true,
+      "associatedDomains": ["applinks:rumopragas.vercel.app"],
       "infoPlist": {
         "NSCameraUsageDescription": "Precisamos da câmera para fotografar pragas e sintomas nas lavouras para diagnóstico por IA.",
         "NSPhotoLibraryUsageDescription": "Precisamos acessar suas fotos para selecionar imagens de pragas e sintomas para diagnóstico por IA.",
@@ -32,7 +35,21 @@
         "android.permission.CAMERA",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.READ_EXTERNAL_STORAGE"
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "rumopragas.vercel.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "web": {

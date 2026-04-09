@@ -10,7 +10,6 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
-  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,9 +27,6 @@ import {
   FontWeight,
   Gradients,
 } from '../../constants/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 type AuthMode = 'login' | 'signup';
 
 export default function LoginScreen() {

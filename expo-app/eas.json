@@ -34,7 +34,6 @@
     "production": {
       "ios": {
         "appleId": "manoelgiansante@icloud.com",
-        "ascAppId": "0",
         "appleTeamId": "5YW9UY5LXP"
       },
       "android": {
