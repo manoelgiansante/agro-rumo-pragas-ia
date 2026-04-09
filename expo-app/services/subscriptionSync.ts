@@ -13,8 +13,6 @@ import { isRevenueCatConfigured } from './purchases';
 type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
 type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing';
 
-let listenerRemover: (() => void) | null = null;
-
 let listenerRegistered = false;
 
 /**
@@ -98,7 +96,7 @@ export function startSubscriptionListener(userId: string): void {
   if (!isRevenueCatConfigured()) return;
   if (listenerRegistered) return;
 
-  listenerRemover = Purchases.addCustomerInfoUpdateListener(async (customerInfo: CustomerInfo) => {
+  Purchases.addCustomerInfoUpdateListener(async (customerInfo: CustomerInfo) => {
     console.warn('[SubscriptionSync] CustomerInfo updated');
     const info = deriveSubscriptionInfo(customerInfo);
 
@@ -134,9 +132,5 @@ export function startSubscriptionListener(userId: string): void {
  * Stop subscription listener. Call on logout.
  */
 export function stopSubscriptionListener(): void {
-  if (listenerRemover) {
-    listenerRemover();
-    listenerRemover = null;
-  }
   listenerRegistered = false;
 }
