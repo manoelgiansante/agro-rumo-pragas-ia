@@ -149,7 +149,7 @@ export default function AIChatScreen() {
       }
       setSending(false);
     },
-    [input, sending, messages],
+    [input, sending, messages, t],
   );
 
   const handleSuggestionPress = useCallback(
@@ -183,7 +183,7 @@ export default function AIChatScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.accent} />
           <Text style={[styles.loadingText, isDark && styles.textDark]}>
-            Carregando conversa...
+            {t('aiChat.loadingConversation')}
           </Text>
         </View>
       ) : messages.length === 0 ? (

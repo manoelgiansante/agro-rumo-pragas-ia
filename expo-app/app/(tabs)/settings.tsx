@@ -22,6 +22,7 @@ import { Colors, Spacing, BorderRadius, FontSize, Gradients } from '../../consta
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useOTAUpdate } from '../../hooks/useOTAUpdate';
 import { supabase } from '../../services/supabase';
+import { restorePurchases, isRevenueCatConfigured } from '../../services/purchases';
 
 const PUSH_ENABLED_KEY = '@rumo_pragas_push_enabled';
 
@@ -54,6 +55,7 @@ export default function SettingsScreen() {
   const [subLoading, setSubLoading] = useState(true);
   const [subError, setSubError] = useState(false);
   const subLoadingRef = useRef(false);
+  const [restoring, setRestoring] = useState(false);
   const { isChecking, checkForUpdate } = useOTAUpdate();
   const userName = user?.user_metadata?.full_name || t('home.defaultUser');
   const userEmail = user?.email || '';
@@ -112,7 +114,7 @@ export default function SettingsScreen() {
         { text: t('common.cancel'), style: 'cancel' as const },
       ]);
     }
-  }, [i18n]);
+  }, [i18n, t]);
 
   const loadSubscriptionData = useCallback(async () => {
     if (!user || subLoadingRef.current) return;
@@ -151,6 +153,29 @@ export default function SettingsScreen() {
   useEffect(() => {
     loadSubscriptionData();
   }, [loadSubscriptionData]);
+
+  const handleRestorePurchases = useCallback(async () => {
+    if (!isRevenueCatConfigured()) return;
+    setRestoring(true);
+    try {
+      const customerInfo = await restorePurchases();
+      if (customerInfo) {
+        const hasActive =
+          customerInfo.entitlements.active['pro'] || customerInfo.entitlements.active['enterprise'];
+        if (hasActive) {
+          Alert.alert(t('paywall.purchasesRestored'), t('paywall.subscriptionReactivated'), [
+            { text: 'OK', onPress: loadSubscriptionData },
+          ]);
+        } else {
+          Alert.alert(t('paywall.noSubscriptionFound'), t('paywall.noSubscriptionFoundMsg'));
+        }
+      }
+    } catch {
+      Alert.alert(t('common.error'), t('paywall.restoreError'));
+    } finally {
+      setRestoring(false);
+    }
+  }, [t, loadSubscriptionData]);
 
   const handleSignOut = () => {
     Alert.alert(t('settings.signOut'), t('settings.signOut') + '?', [
@@ -270,8 +295,11 @@ export default function SettingsScreen() {
                 subLoading
                   ? undefined
                   : PLAN_LIMITS[plan] === -1
-                    ? `${usedThisMonth} diagnosticos`
-                    : `${usedThisMonth}/${PLAN_LIMITS[plan]} diagnosticos`
+                    ? t('settings.diagnosticsCountUnlimited', { used: usedThisMonth })
+                    : t('settings.diagnosticsCountLimited', {
+                        used: usedThisMonth,
+                        limit: PLAN_LIMITS[plan],
+                      })
               }
               trailing={
                 subLoading ? <ActivityIndicator size="small" color={Colors.accent} /> : undefined
@@ -282,6 +310,16 @@ export default function SettingsScreen() {
                 icon="arrow-up-circle"
                 label={t('settings.upgradePlan')}
                 onPress={() => router.push('/paywall')}
+              />
+            )}
+            {isRevenueCatConfigured() && (
+              <Row
+                icon="refresh-circle"
+                label={restoring ? t('common.loading') : t('paywall.restorePurchases')}
+                onPress={restoring ? undefined : handleRestorePurchases}
+                trailing={
+                  restoring ? <ActivityIndicator size="small" color={Colors.accent} /> : undefined
+                }
               />
             )}
           </>

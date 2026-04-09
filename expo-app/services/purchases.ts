@@ -4,6 +4,7 @@ import Purchases, {
   PURCHASES_ERROR_CODE,
 } from 'react-native-purchases';
 import { Platform } from 'react-native';
+import i18n from '../i18n';
 
 const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
 const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '';
@@ -103,7 +104,7 @@ export async function checkSubscriptionStatus(): Promise<{
     return {
       plan: 'free',
       isActive: false,
-      error: 'Não foi possível verificar sua assinatura. Tente novamente.',
+      error: i18n.t('errors.subscriptionCheckFailed'),
     };
   }
 }
@@ -117,9 +118,6 @@ export async function restorePurchases(): Promise<CustomerInfo | null> {
     return customerInfo;
   } catch (e) {
     console.error('[RevenueCat] Failed to restore purchases:', e);
-    throw new Error(
-      'Não foi possível restaurar suas compras. Verifique sua conexão e tente novamente.',
-      { cause: e },
-    );
+    throw new Error(i18n.t('errors.restorePurchasesFailed'), { cause: e });
   }
 }

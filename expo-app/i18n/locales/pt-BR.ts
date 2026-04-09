@@ -243,6 +243,8 @@ export default {
     deletionReceivedMessage:
       'Sua solicitação de exclusão de conta foi registrada. Seus dados serão removidos em até 15 dias conforme a LGPD.',
     deletionError: 'Não foi possível processar a solicitação. Tente novamente.',
+    diagnosticsCountUnlimited: '{{used}} diagnósticos',
+    diagnosticsCountLimited: '{{used}}/{{limit}} diagnósticos',
     subLoadError: 'Erro ao carregar assinatura',
     subLoadRetry: 'Toque para tentar novamente',
     pushNotifA11y: 'Notificações push',
@@ -341,6 +343,9 @@ export default {
     fetchCount: 'Falha ao buscar contagem',
     locationPermissionDenied: 'Permissão de localização negada',
     locationError: 'Erro ao obter localização',
+    subscriptionCheckFailed: 'Não foi possível verificar sua assinatura. Tente novamente.',
+    restorePurchasesFailed:
+      'Não foi possível restaurar suas compras. Verifique sua conexão e tente novamente.',
   },
   errorBoundary: {
     title: 'Algo deu errado',
@@ -478,6 +483,7 @@ export default {
       'O serviço de IA está temporariamente indisponível. Tente novamente em alguns minutos.',
     genericError: 'Ocorreu um erro ao processar sua mensagem. Tente novamente.',
     emptyResponse: 'Resposta vazia da IA',
+    loadingConversation: 'Carregando conversa...',
   },
   // History
   history: {

@@ -234,6 +234,8 @@ export default {
     deletionReceivedMessage:
       'Your account deletion request has been registered. Your data will be removed within 15 days in accordance with LGPD.',
     deletionError: 'Could not process the request. Please try again.',
+    diagnosticsCountUnlimited: '{{used}} diagnoses',
+    diagnosticsCountLimited: '{{used}}/{{limit}} diagnoses',
     subLoadError: 'Failed to load subscription',
     subLoadRetry: 'Tap to try again',
     pushNotifA11y: 'Push notifications',
@@ -330,6 +332,9 @@ export default {
     fetchCount: 'Failed to fetch count',
     locationPermissionDenied: 'Location permission denied',
     locationError: 'Error getting location',
+    subscriptionCheckFailed: 'Could not verify your subscription. Please try again.',
+    restorePurchasesFailed:
+      'Could not restore your purchases. Check your connection and try again.',
   },
   errorBoundary: {
     title: 'Something went wrong',
@@ -467,6 +472,7 @@ export default {
       'The AI service is temporarily unavailable. Please try again in a few minutes.',
     genericError: 'An error occurred while processing your message. Please try again.',
     emptyResponse: 'Empty AI response',
+    loadingConversation: 'Loading conversation...',
   },
   history: {
     title: 'History',
