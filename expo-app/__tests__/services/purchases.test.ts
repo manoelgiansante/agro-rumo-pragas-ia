@@ -89,7 +89,9 @@ describe('checkSubscriptionStatus', () => {
 
     const result = await checkSubscriptionStatus();
 
-    expect(result).toEqual({ plan: 'free', isActive: false });
+    expect(result.plan).toBe('free');
+    expect(result.isActive).toBe(false);
+    expect(result.error).toBeDefined();
   });
 });
 
@@ -174,11 +176,9 @@ describe('restorePurchases', () => {
     expect(result).toEqual(customerInfo);
   });
 
-  it('returns null on failure', async () => {
+  it('throws on failure', async () => {
     mockRestorePurchases.mockRejectedValueOnce(new Error('fail'));
 
-    const result = await restorePurchases();
-
-    expect(result).toBeNull();
+    await expect(restorePurchases()).rejects.toThrow();
   });
 });
