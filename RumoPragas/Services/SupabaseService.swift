@@ -332,6 +332,7 @@ nonisolated enum APIError: LocalizedError, Sendable {
     case invalidURL
     case networkError
     case authFailed
+    case unauthorized
     case decodingError
     case serverError(String)
     case subscriptionRequired
@@ -341,6 +342,7 @@ nonisolated enum APIError: LocalizedError, Sendable {
         case .invalidURL: "URL inválida"
         case .networkError: "Erro de conexão. Verifique sua internet."
         case .authFailed: "Falha na autenticação"
+        case .unauthorized: "Sessão expirada. Faça login novamente."
         case .decodingError: "Erro ao processar resposta"
         case .serverError(let msg): msg
         case .subscriptionRequired: "Assinatura necessária para usar o diagnóstico por IA."

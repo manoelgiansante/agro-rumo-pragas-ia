@@ -476,6 +476,7 @@ export default {
     errorLoading: 'Error loading history',
     deleteTitle: 'Delete',
     deleteConfirm: 'Are you sure you want to delete this diagnosis?',
+    deleteError: 'Could not delete. Check your connection.',
     deleteHint: 'Long press to delete this diagnosis',
     diagnosisCount: '{{count}} diagnoses',
     itemA11y: 'Diagnosis: {{pest}}, crop {{crop}}, confidence {{confidence}} percent',

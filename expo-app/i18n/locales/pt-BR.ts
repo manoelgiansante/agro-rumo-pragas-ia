@@ -488,6 +488,7 @@ export default {
     errorLoading: 'Erro ao carregar histórico',
     deleteTitle: 'Excluir',
     deleteConfirm: 'Tem certeza que deseja excluir este diagnóstico?',
+    deleteError: 'Não foi possível excluir. Verifique sua conexão.',
     deleteHint: 'Mantenha pressionado para excluir este diagnóstico',
     diagnosisCount: '{{count}} diagnósticos',
     itemA11y: 'Diagnóstico: {{pest}}, cultura {{crop}}, confiança {{confidence}} por cento',

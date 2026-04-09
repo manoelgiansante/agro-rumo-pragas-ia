@@ -167,14 +167,24 @@ export default function ResultScreen() {
       minute: '2-digit',
     });
 
+    const escapeHtml = (str: string): string =>
+      str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
     const buildList = (items: string[] | undefined) => {
       if (!items?.length) return `<p style="color:#8E8E93;">${t('diagnosis.noInfoAvailable')}</p>`;
-      return '<ul>' + items.map((s: string) => `<li>${s}</li>`).join('') + '</ul>';
+      return '<ul>' + items.map((s: string) => `<li>${escapeHtml(s)}</li>`).join('') + '</ul>';
     };
 
     const sections: string[] = [];
     if (enrichment.description) {
-      sections.push(`<h2>${t('diagnosis.description')}</h2><p>${enrichment.description}</p>`);
+      sections.push(
+        `<h2>${t('diagnosis.description')}</h2><p>${escapeHtml(enrichment.description)}</p>`,
+      );
     }
     if (enrichment.symptoms?.length) {
       sections.push(`<h2>${t('diagnosis.symptoms')}</h2>${buildList(enrichment.symptoms)}`);
@@ -210,11 +220,13 @@ export default function ResultScreen() {
     }
     if (enrichment.economic_impact) {
       sections.push(
-        `<h2>${t('diagnosis.economicImpact')}</h2><p>${enrichment.economic_impact}</p>`,
+        `<h2>${t('diagnosis.economicImpact')}</h2><p>${escapeHtml(enrichment.economic_impact)}</p>`,
       );
     }
     if (enrichment.mip_strategy) {
-      sections.push(`<h2>${t('diagnosis.mipStrategy')}</h2><p>${enrichment.mip_strategy}</p>`);
+      sections.push(
+        `<h2>${t('diagnosis.mipStrategy')}</h2><p>${escapeHtml(enrichment.mip_strategy)}</p>`,
+      );
     }
 
     return `<!DOCTYPE html>

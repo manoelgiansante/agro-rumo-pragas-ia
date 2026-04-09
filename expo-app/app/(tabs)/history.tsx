@@ -14,7 +14,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../constants/theme';
-import { PremiumCard } from '../../components/PremiumCard';
 import { DiagnosisCard } from '../../components/DiagnosisCard';
 import { SearchInput } from '../../components/SearchInput';
 import { supabase } from '../../services/supabase';
@@ -58,6 +57,7 @@ export default function HistoryScreen() {
   useFocusEffect(
     useCallback(() => {
       loadDiagnoses();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, session]),
   );
 
@@ -69,7 +69,11 @@ export default function HistoryScreen() {
         style: 'destructive',
         onPress: async () => {
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          await supabase.from('pragas_diagnoses').delete().eq('id', id);
+          const { error } = await supabase.from('pragas_diagnoses').delete().eq('id', id);
+          if (error) {
+            Alert.alert(t('common.error'), t('history.deleteError'));
+            return;
+          }
           setDiagnoses((d) => d.filter((x) => x.id !== id));
         },
       },
@@ -80,6 +84,7 @@ export default function HistoryScreen() {
     setRefreshing(true);
     await loadDiagnoses();
     setRefreshing(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, session]);
 
   const filtered = useMemo(

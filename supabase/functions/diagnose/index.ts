@@ -252,6 +252,17 @@ serve(async (req: Request) => {
     // Clean base64 (remove data URI prefix if present)
     const cleanBase64 = image_base64.replace(/^data:image\/\w+;base64,/, "");
 
+    // Validate image size (max ~7.5MB image = ~10MB base64)
+    if (cleanBase64.length > 10_000_000) {
+      return new Response(
+        JSON.stringify({ error: "Imagem muito grande. Maximo 7.5MB." }),
+        {
+          status: 413,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     // Detect media type
     const isJpeg =
       cleanBase64.startsWith("/9j/") || cleanBase64.startsWith("/9J/");
@@ -262,9 +273,21 @@ serve(async (req: Request) => {
         ? "image/jpeg"
         : "image/jpeg";
 
+    // Validate crop_type against known crops to prevent prompt injection
+    const validCropTypes = [
+      "Soybean", "Corn", "Coffee", "Cotton", "Sugarcane", "Wheat", "Rice",
+      "Bean", "Potato", "Tomato", "Cassava", "Citrus", "Grape", "Banana",
+      "Sorghum", "Peanut", "Sunflower", "Onion",
+    ];
+    const safeCropType = crop_type && validCropTypes.includes(crop_type)
+      ? crop_type
+      : crop_type
+        ? "outro"
+        : "";
+
     // Build the prompt with crop context
-    const cropContext = crop_type
-      ? `\nA cultura informada pelo produtor e: ${crop_type}. Considere isso na sua analise.`
+    const cropContext = safeCropType
+      ? `\nA cultura informada pelo produtor e: ${safeCropType}. Considere isso na sua analise.`
       : "";
     const locationContext =
       latitude && longitude

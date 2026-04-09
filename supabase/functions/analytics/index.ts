@@ -79,21 +79,44 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Optional: authenticate the request to get user context
+  // Require authentication for analytics writes
   let authenticatedUserId: string | null = null;
   const authHeader = req.headers.get("Authorization");
-  if (authHeader) {
-    try {
-      const supabaseUser = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const {
-        data: { user },
-      } = await supabaseUser.auth.getUser();
-      if (user) authenticatedUserId = user.id;
-    } catch {
-      // Continue without auth — analytics should not block on auth failures
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: "Authorization required" }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+  try {
+    const supabaseUser = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const {
+      data: { user },
+    } = await supabaseUser.auth.getUser();
+    if (user) {
+      authenticatedUserId = user.id;
+    } else {
+      return new Response(
+        JSON.stringify({ error: "Invalid token" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "Authentication failed" }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   let body: { events: AnalyticsEvent[] };
