@@ -54,7 +54,7 @@ export function useDiagnosisSync() {
             session.access_token,
           );
           await removeFromQueue(item.id);
-          console.log(`[DiagnosisSync] Synced pending diagnosis ${item.id}`);
+          console.warn(`[DiagnosisSync] Synced pending diagnosis ${item.id}`);
         } catch (error) {
           console.warn(
             `[DiagnosisSync] Failed to sync ${item.id} (retry ${item.retryCount + 1}/${MAX_RETRIES}):`,

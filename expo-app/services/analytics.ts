@@ -62,7 +62,7 @@ export function trackEvent(event: string, properties?: Record<string, unknown>):
   };
 
   if (__DEV__) {
-    console.log('[Analytics]', event, properties ?? '');
+    console.warn('[Analytics]', event, properties ?? '');
   }
 
   eventQueue.push(analyticsEvent);

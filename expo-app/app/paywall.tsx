@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -26,46 +26,49 @@ import {
 export default function PaywallScreen() {
   const { t } = useTranslation();
 
-  const PLANS = [
-    {
-      id: 'free',
-      name: t('paywall.plans.free'),
-      price: t('paywall.plans.freePrice'),
-      limit: 3,
-      features: [
-        t('paywall.plans.freeDiag'),
-        t('paywall.plans.pestLibrary'),
-        t('paywall.plans.limitedChat'),
-      ],
-    },
-    {
-      id: 'pro',
-      name: t('paywall.plans.pro'),
-      price: t('paywall.plans.proPrice'),
-      limit: 30,
-      popular: true,
-      features: [
-        t('paywall.plans.proDiag'),
-        t('paywall.plans.fullLibrary'),
-        t('paywall.plans.unlimitedChat'),
-        t('paywall.plans.fullHistory'),
-        t('paywall.plans.prioritySupport'),
-      ],
-    },
-    {
-      id: 'enterprise',
-      name: t('paywall.plans.enterprise'),
-      price: t('paywall.plans.enterprisePrice'),
-      limit: -1,
-      features: [
-        t('paywall.plans.unlimitedDiag'),
-        t('paywall.plans.allPro'),
-        t('paywall.plans.apiIntegration'),
-        t('paywall.plans.advancedDashboard'),
-        t('paywall.plans.dedicatedSupport'),
-      ],
-    },
-  ];
+  const PLANS = useMemo(
+    () => [
+      {
+        id: 'free',
+        name: t('paywall.plans.free'),
+        price: t('paywall.plans.freePrice'),
+        limit: 3,
+        features: [
+          t('paywall.plans.freeDiag'),
+          t('paywall.plans.pestLibrary'),
+          t('paywall.plans.limitedChat'),
+        ],
+      },
+      {
+        id: 'pro',
+        name: t('paywall.plans.pro'),
+        price: t('paywall.plans.proPrice'),
+        limit: 30,
+        popular: true,
+        features: [
+          t('paywall.plans.proDiag'),
+          t('paywall.plans.fullLibrary'),
+          t('paywall.plans.unlimitedChat'),
+          t('paywall.plans.fullHistory'),
+          t('paywall.plans.prioritySupport'),
+        ],
+      },
+      {
+        id: 'enterprise',
+        name: t('paywall.plans.enterprise'),
+        price: t('paywall.plans.enterprisePrice'),
+        limit: -1,
+        features: [
+          t('paywall.plans.unlimitedDiag'),
+          t('paywall.plans.allPro'),
+          t('paywall.plans.apiIntegration'),
+          t('paywall.plans.advancedDashboard'),
+          t('paywall.plans.dedicatedSupport'),
+        ],
+      },
+    ],
+    [t],
+  );
 
   const [selected, setSelected] = useState('pro');
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
@@ -99,7 +102,7 @@ export default function PaywallScreen() {
         }
       });
     });
-  }, [configured]);
+  }, [configured, PLANS]);
 
   const findPackageForPlan = useCallback(
     (planId: string): PurchasesPackage | undefined => {
@@ -145,7 +148,7 @@ export default function PaywallScreen() {
     } finally {
       setPurchasing(false);
     }
-  }, [selected, configured, findPackageForPlan]);
+  }, [selected, configured, findPackageForPlan, t]);
 
   const handleRestore = useCallback(async () => {
     setRestoring(true);
@@ -169,7 +172,7 @@ export default function PaywallScreen() {
     } finally {
       setRestoring(false);
     }
-  }, []);
+  }, [t]);
 
   return (
     <SafeAreaView style={styles.container}>

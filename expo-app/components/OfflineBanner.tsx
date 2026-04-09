@@ -43,7 +43,7 @@ export function OfflineBanner() {
         }
       });
     }
-  }, [isOffline, insets.top]);
+  }, [isOffline, insets.top, height, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     height: height.value,

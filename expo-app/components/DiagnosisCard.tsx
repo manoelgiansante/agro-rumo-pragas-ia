@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../constants/theme';
+import { Colors, FontSize, FontWeight } from '../constants/theme';
 
 export interface DiagnosisItem {
   id: string;
@@ -124,7 +124,7 @@ function parseNameFromNotes(notes?: string): string | undefined {
 
 export const DiagnosisCard = React.memo(function DiagnosisCard({
   diagnosis,
-  compact = false,
+  compact: _compact = false,
 }: DiagnosisCardProps) {
   const isDark = useColorScheme() === 'dark';
   const { t } = useTranslation();

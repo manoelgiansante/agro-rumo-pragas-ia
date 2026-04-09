@@ -3,7 +3,6 @@ import {
   View,
   Text,
   FlatList,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
@@ -141,7 +140,7 @@ const severityColor: Record<string, string> = {
 export default function LibraryScreen() {
   const { t } = useTranslation();
   const isDark = useColorScheme() === 'dark';
-  const { isTablet, contentMaxWidth, numColumns } = useResponsive();
+  const { isTablet, contentMaxWidth } = useResponsive();
   const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 

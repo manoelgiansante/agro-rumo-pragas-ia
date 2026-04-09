@@ -184,7 +184,7 @@ export async function fetchWeather(
     // Network failed -- return stale cache if available so the UI still shows something
     const stale = await getStaleCache();
     if (stale) {
-      console.info('[Weather] Using stale cache as fallback');
+      console.warn('[Weather] Using stale cache as fallback');
       return stale;
     }
 

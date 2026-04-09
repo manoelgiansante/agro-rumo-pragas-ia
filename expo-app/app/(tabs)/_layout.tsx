@@ -4,8 +4,6 @@ import { useColorScheme, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/theme';
 
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-
 export default function TabsLayout() {
   const { t } = useTranslation();
   const colorScheme = useColorScheme();

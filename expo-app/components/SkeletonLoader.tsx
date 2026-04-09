@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, useColorScheme, ViewStyle, DimensionValue } from 'react-native';
-import { Colors } from '../constants/theme';
 
 interface SkeletonLoaderProps {
   width: DimensionValue;

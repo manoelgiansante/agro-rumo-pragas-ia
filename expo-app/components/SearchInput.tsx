@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Colors, BorderRadius, FontSize } from '../constants/theme';
 
 interface SearchInputProps {
   value: string;

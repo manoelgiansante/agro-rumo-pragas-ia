@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { Colors, Gradients, FontSize, Spacing, BorderRadius } from '../constants/theme';
+import { Colors, Gradients, FontSize } from '../constants/theme';
 
 export interface ChatMessageData {
   id: string;
