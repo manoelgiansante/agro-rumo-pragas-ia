@@ -28,13 +28,13 @@ export default function TermsScreen() {
 
         <Text style={styles.sectionTitle}>1. Aceitacao dos Termos</Text>
         <Text style={styles.paragraph}>
-          Ao acessar e utilizar o aplicativo Rumo Pragas ("App"), voce concorda com estes Termos de
+          Ao acessar e utilizar o aplicativo Rumo Praga ("App"), voce concorda com estes Termos de
           Uso. Caso nao concorde com algum dos termos aqui descritos, por favor, nao utilize o App.
         </Text>
 
         <Text style={styles.sectionTitle}>2. Descricao do Servico</Text>
         <Text style={styles.paragraph}>
-          O Rumo Pragas e um aplicativo de diagnostico inteligente de pragas agricolas que utiliza
+          O Rumo Praga e um aplicativo de diagnostico inteligente de pragas agricolas que utiliza
           inteligencia artificial para analisar imagens de plantas e identificar possiveis pragas,
           doencas e deficiencias nutricionais. O App oferece funcionalidades como captura e envio de
           fotos, historico de diagnosticos, chat com IA especializada e relatorios.
@@ -51,7 +51,7 @@ export default function TermsScreen() {
 
         <Text style={styles.sectionTitle}>4. Diagnosticos Informativos</Text>
         <Text style={styles.importantBox}>
-          Os diagnosticos fornecidos pelo Rumo Pragas sao meramente informativos e baseados em
+          Os diagnosticos fornecidos pelo Rumo Praga sao meramente informativos e baseados em
           modelos de inteligencia artificial. Eles NAO substituem a avaliacao de um engenheiro
           agronomo ou profissional habilitado. Recomendamos que todo diagnostico seja validado por
           um profissional antes de qualquer tomada de decisao sobre manejo, aplicacao de defensivos
@@ -114,6 +114,22 @@ export default function TermsScreen() {
         <Text style={styles.paragraph}>
           Em caso de duvidas sobre estes Termos de Uso, entre em contato conosco pelo email:
           contato@agrorumo.com.br
+        </Text>
+
+        <Text style={styles.sectionTitle}>14. Contato Legal</Text>
+        <Text style={styles.paragraph}>
+          Razao Social: AgroRumo (Manoel Nascimento - Pessoa Fisica){'\n'}
+          CNPJ: Em processo de registro como MEI{'\n'}
+          Email: contato@agrorumo.com.br{'\n'}
+          DPO: dpo@agrorumo.com.br
+        </Text>
+
+        <Text style={styles.sectionTitle}>15. Lei Aplicavel e Foro</Text>
+        <Text style={styles.paragraph}>
+          Este Termo e regido pelas leis da Republica Federativa do Brasil, incluindo o Codigo de
+          Defesa do Consumidor (Lei 8.078/1990) e a LGPD (Lei 13.709/2018). Fica eleito o foro da
+          Comarca de Ribeirao Preto - SP para dirimir quaisquer disputas, renunciando as partes a
+          qualquer outro, por mais privilegiado que seja.
         </Text>
 
         <View style={styles.bottomSpacer} />
