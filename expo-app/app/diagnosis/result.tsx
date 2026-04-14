@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Alert,
   Platform,
+  useColorScheme,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,13 +17,24 @@ import * as Linking from 'expo-linking';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useTranslation } from 'react-i18next';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedReaction,
+  withTiming,
+  Easing,
+  runOnJS,
+} from 'react-native-reanimated';
 import { Colors, Spacing, BorderRadius, FontSize, Gradients } from '../../constants/theme';
 import { PremiumCard } from '../../components/PremiumCard';
 import { CollapsibleSection } from '../../components/CollapsibleSection';
 import { trackSuccessfulDiagnosis } from '../../services/storeReview';
+import type { AgrioEnrichment } from '../../types/diagnosis';
 
 export default function ResultScreen() {
   const { t } = useTranslation();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { data, error, queued } = useLocalSearchParams<{
     data?: string;
     error?: string;
@@ -45,15 +57,15 @@ export default function ResultScreen() {
     result.pest_id === 'Healthy';
   const confidence = result.confidence ?? 0;
 
-  const enrichment = useMemo(() => {
+  const enrichment = useMemo((): AgrioEnrichment => {
     try {
-      let notes: any = {};
+      let notes: Record<string, unknown> = {} as Record<string, unknown>;
       if (result.parsedNotes) notes = result.parsedNotes;
       else if (typeof result.notes === 'string') notes = JSON.parse(result.notes);
       else notes = result.notes || {};
-      return notes.enrichment || {};
+      return (notes.enrichment || {}) as AgrioEnrichment;
     } catch {
-      return {};
+      return {} as AgrioEnrichment;
     }
   }, [result]);
 
@@ -79,6 +91,34 @@ export default function ResultScreen() {
     return t('severity.undefined');
   }, [enrichment, isHealthy, t]);
 
+  // Animated confidence bar: count up from 0% → confidence% in ~1s on mount.
+  // Uses Reanimated worklet so the animation runs entirely on the UI thread.
+  const confidenceProgress = useSharedValue(0);
+  const [displayConfidence, setDisplayConfidence] = useState(0);
+
+  useEffect(() => {
+    if (!error && !queued && result.pest_id) {
+      confidenceProgress.value = 0;
+      confidenceProgress.value = withTiming(confidence, {
+        duration: 1000,
+        easing: Easing.out(Easing.cubic),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confidence, error, queued, result.pest_id]);
+
+  // Mirror shared value → React state so the numeric % ticks up in sync
+  useAnimatedReaction(
+    () => confidenceProgress.value,
+    (value) => {
+      runOnJS(setDisplayConfidence)(Math.round(value * 100));
+    },
+  );
+
+  const confidenceBarStyle = useAnimatedStyle(() => ({
+    width: `${confidenceProgress.value * 100}%`,
+  }));
+
   // Track successful diagnosis for store review prompt
   // Hook is called unconditionally (React rules of hooks) but logic is guarded
   useEffect(() => {
@@ -97,7 +137,7 @@ export default function ResultScreen() {
     const sev = severityLabel();
 
     const symptoms = enrichment.symptoms?.length
-      ? enrichment.symptoms.map((s: string) => `  - ${s}`).join('\n')
+      ? enrichment.symptoms!.map((s: string) => `  - ${s}`).join('\n')
       : `  ${t('diagnosis.noSymptomsRecorded')}`;
 
     const treatments: string[] = [];
@@ -117,7 +157,7 @@ export default function ResultScreen() {
       treatments.length > 0 ? treatments.join('\n') : `  ${t('diagnosis.noTreatmentRecorded')}`;
 
     const prevention = enrichment.prevention?.length
-      ? enrichment.prevention.map((s: string) => `  - ${s}`).join('\n')
+      ? enrichment.prevention!.map((s: string) => `  - ${s}`).join('\n')
       : `  ${t('diagnosis.noPreventionRecorded')}`;
 
     return [
@@ -174,6 +214,15 @@ export default function ResultScreen() {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+
+    // Sanitize all user-controlled values before HTML interpolation
+    const safePestName = escapeHtml(pestName);
+    const safeCrop = escapeHtml(crop);
+    const safeSev = escapeHtml(sev);
+    const safeDate = escapeHtml(date);
+    const safeScientificName = enrichment.scientific_name
+      ? escapeHtml(enrichment.scientific_name)
+      : '';
 
     const buildList = (items: string[] | undefined) => {
       if (!items?.length) return `<p style="color:#8E8E93;">${t('diagnosis.noInfoAvailable')}</p>`;
@@ -257,14 +306,14 @@ export default function ResultScreen() {
 <body>
   <div class="header">
     <h1>${t('diagnosis.pdfTitle')}</h1>
-    <div class="date">${date}</div>
+    <div class="date">${safeDate}</div>
   </div>
 
   <div class="summary">
     <div class="summary-item">
       <div class="label">${t('diagnosis.pdfPestIdentified')}</div>
-      <div class="value">${pestName}</div>
-      ${enrichment.scientific_name ? `<div style="font-size:12px;color:#8E8E93;font-style:italic;">${enrichment.scientific_name}</div>` : ''}
+      <div class="value">${safePestName}</div>
+      ${safeScientificName ? `<div style="font-size:12px;color:#8E8E93;font-style:italic;">${safeScientificName}</div>` : ''}
     </div>
     <div class="summary-item">
       <div class="label">${t('diagnosis.confidence')}</div>
@@ -273,11 +322,11 @@ export default function ResultScreen() {
     </div>
     <div class="summary-item">
       <div class="label">${t('diagnosis.pdfSeverity')}</div>
-      <div class="value severity-${enrichment?.severity || 'low'}">${sev}</div>
+      <div class="value severity-${enrichment?.severity || 'low'}">${safeSev}</div>
     </div>
     <div class="summary-item">
       <div class="label">${t('diagnosis.pdfCrop')}</div>
-      <div class="value">${crop}</div>
+      <div class="value">${safeCrop}</div>
     </div>
   </div>
 
@@ -311,12 +360,14 @@ export default function ResultScreen() {
   // Early returns AFTER all hooks have been called
   if (queued === 'true') {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
         <View style={styles.errorCenter}>
           <View style={[styles.errorIcon, { backgroundColor: Colors.warmAmber + '1F' }]}>
             <Ionicons name="cloud-upload-outline" size={44} color={Colors.warmAmber} />
           </View>
-          <Text style={styles.errorTitle}>{t('diagnosis.queued')}</Text>
+          <Text style={[styles.errorTitle, isDark && styles.textDark]}>
+            {t('diagnosis.queued')}
+          </Text>
           <Text style={styles.errorMsg}>{t('diagnosis.queuedMessage')}</Text>
           <TouchableOpacity
             style={[styles.closeBtn, { backgroundColor: Colors.warmAmber }]}
@@ -333,7 +384,7 @@ export default function ResultScreen() {
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
         <View style={styles.errorCenter}>
           <View style={[styles.errorIcon, { backgroundColor: Colors.coral + '1F' }]}>
             <Ionicons
@@ -344,7 +395,7 @@ export default function ResultScreen() {
               accessibilityRole="image"
             />
           </View>
-          <Text style={styles.errorTitle}>{t('diagnosis.error')}</Text>
+          <Text style={[styles.errorTitle, isDark && styles.textDark]}>{t('diagnosis.error')}</Text>
           <Text style={styles.errorMsg}>{error}</Text>
           <TouchableOpacity
             style={styles.closeBtn}
@@ -362,12 +413,14 @@ export default function ResultScreen() {
   // Empty state: no valid diagnosis data received
   if (!data || (!result.pest_name && !result.pest_id)) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
         <View style={styles.errorCenter}>
           <View style={[styles.errorIcon, { backgroundColor: Colors.systemGray5 }]}>
             <Ionicons name="document-text-outline" size={44} color={Colors.systemGray} />
           </View>
-          <Text style={styles.errorTitle}>{t('diagnosis.noData')}</Text>
+          <Text style={[styles.errorTitle, isDark && styles.textDark]}>
+            {t('diagnosis.noData')}
+          </Text>
           <Text style={styles.errorMsg}>{t('diagnosis.noDataMsg')}</Text>
           <TouchableOpacity
             style={styles.closeBtn}
@@ -383,11 +436,13 @@ export default function ResultScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <ScrollView>
         <LinearGradient
           colors={
-            isHealthy ? (Gradients.hero as any) : [severityColor + '25', severityColor + '08']
+            isHealthy
+              ? Gradients.hero
+              : ([severityColor + '25', severityColor + '08'] as [string, string])
           }
           style={styles.header}
         >
@@ -424,7 +479,13 @@ export default function ResultScreen() {
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.pestName, isHealthy && { color: '#FFF' }]}>
+              <Text
+                style={[
+                  styles.pestName,
+                  isHealthy && { color: '#FFF' },
+                  !isHealthy && isDark && styles.textDark,
+                ]}
+              >
                 {isHealthy
                   ? t('diagnosis.healthy')
                   : enrichment.name_pt || result.pest_name || t('diagnosis.pestDetected')}
@@ -432,6 +493,39 @@ export default function ResultScreen() {
               {!isHealthy && (
                 <Text style={styles.scientific}>{enrichment.scientific_name || ''}</Text>
               )}
+            </View>
+          </View>
+
+          {/* Animated confidence bar — counts up from 0% to final value in 1s */}
+          <View style={styles.confidenceWrap}>
+            <View style={styles.confidenceLabelRow}>
+              <Text
+                style={[
+                  styles.confidenceLabel,
+                  { color: isHealthy ? 'rgba(255,255,255,0.9)' : Colors.textSecondary },
+                ]}
+              >
+                {t('diagnosis.confidence')}
+              </Text>
+              <Text style={[styles.confidenceValue, { color: isHealthy ? '#FFF' : severityColor }]}>
+                {displayConfidence}%
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.confidenceTrack,
+                {
+                  backgroundColor: isHealthy ? 'rgba(255,255,255,0.2)' : Colors.systemGray5,
+                },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  styles.confidenceFill,
+                  confidenceBarStyle,
+                  { backgroundColor: isHealthy ? '#FFF' : severityColor },
+                ]}
+              />
             </View>
           </View>
         </LinearGradient>
@@ -469,53 +563,55 @@ export default function ResultScreen() {
               iconColor={Colors.accent}
               defaultExpanded
             >
-              <Text style={styles.sectionText}>{enrichment.description}</Text>
+              <Text style={[styles.sectionText, isDark && styles.textDark]}>
+                {enrichment.description}
+              </Text>
             </CollapsibleSection>
           )}
-          {enrichment.symptoms?.length > 0 && (
+          {(enrichment.symptoms?.length ?? 0) > 0 && (
             <CollapsibleSection
               title={t('diagnosis.symptoms')}
               icon="eye"
               iconColor={Colors.coral}
               defaultExpanded
             >
-              {enrichment.symptoms.map((s: string, i: number) => (
+              {enrichment.symptoms!.map((s: string, i: number) => (
                 <View key={i} style={styles.bulletRow}>
                   <View style={[styles.bullet, { backgroundColor: Colors.accent }]} />
-                  <Text style={styles.sectionText}>{s}</Text>
+                  <Text style={[styles.sectionText, isDark && styles.textDark]}>{s}</Text>
                 </View>
               ))}
             </CollapsibleSection>
           )}
-          {enrichment.causes?.length > 0 && (
+          {(enrichment.causes?.length ?? 0) > 0 && (
             <CollapsibleSection
               title={t('diagnosis.causes')}
               icon="alert-circle"
               iconColor={Colors.warmAmber}
             >
-              {enrichment.causes.map((s: string, i: number) => (
+              {enrichment.causes!.map((s: string, i: number) => (
                 <View key={i} style={styles.bulletRow}>
                   <View style={[styles.bullet, { backgroundColor: Colors.warmAmber }]} />
-                  <Text style={styles.sectionText}>{s}</Text>
+                  <Text style={[styles.sectionText, isDark && styles.textDark]}>{s}</Text>
                 </View>
               ))}
             </CollapsibleSection>
           )}
-          {enrichment.cultural_treatment?.length > 0 && (
+          {(enrichment.cultural_treatment?.length ?? 0) > 0 && (
             <CollapsibleSection
               title={t('diagnosis.culturalControl')}
               icon="hand-left"
               iconColor={Colors.accent}
             >
-              {enrichment.cultural_treatment.map((s: string, i: number) => (
+              {enrichment.cultural_treatment!.map((s: string, i: number) => (
                 <View key={i} style={styles.bulletRow}>
                   <View style={[styles.bullet, { backgroundColor: Colors.accent }]} />
-                  <Text style={styles.sectionText}>{s}</Text>
+                  <Text style={[styles.sectionText, isDark && styles.textDark]}>{s}</Text>
                 </View>
               ))}
             </CollapsibleSection>
           )}
-          {enrichment.chemical_treatment?.length > 0 && (
+          {(enrichment.chemical_treatment?.length ?? 0) > 0 && (
             <CollapsibleSection
               title={t('diagnosis.chemicalControl')}
               icon="flask"
@@ -525,66 +621,66 @@ export default function ResultScreen() {
                 <Ionicons name="warning" size={14} color={Colors.warmAmber} />
                 <Text style={styles.warningText}>{t('diagnosis.chemicalWarning')}</Text>
               </View>
-              {enrichment.chemical_treatment.map((s: string, i: number) => (
+              {enrichment.chemical_treatment!.map((s: string, i: number) => (
                 <View key={i} style={styles.bulletRow}>
                   <View style={[styles.bullet, { backgroundColor: Colors.techBlue }]} />
-                  <Text style={styles.sectionText}>{s}</Text>
+                  <Text style={[styles.sectionText, isDark && styles.textDark]}>{s}</Text>
                 </View>
               ))}
             </CollapsibleSection>
           )}
-          {enrichment.biological_treatment?.length > 0 && (
+          {(enrichment.biological_treatment?.length ?? 0) > 0 && (
             <CollapsibleSection
               title={t('diagnosis.biologicalControl')}
               icon="bug"
               iconColor="#4CAF50"
             >
-              {enrichment.biological_treatment.map((s: string, i: number) => (
+              {enrichment.biological_treatment!.map((s: string, i: number) => (
                 <View key={i} style={styles.bulletRow}>
                   <View style={[styles.bullet, { backgroundColor: '#4CAF50' }]} />
-                  <Text style={styles.sectionText}>{s}</Text>
+                  <Text style={[styles.sectionText, isDark && styles.textDark]}>{s}</Text>
                 </View>
               ))}
             </CollapsibleSection>
           )}
-          {enrichment.prevention?.length > 0 && (
+          {(enrichment.prevention?.length ?? 0) > 0 && (
             <CollapsibleSection
               title={t('diagnosis.prevention')}
               icon="shield-checkmark"
               iconColor="#00BCD4"
             >
-              {enrichment.prevention.map((s: string, i: number) => (
+              {enrichment.prevention!.map((s: string, i: number) => (
                 <View key={i} style={styles.bulletRow}>
                   <View style={[styles.bullet, { backgroundColor: '#00BCD4' }]} />
-                  <Text style={styles.sectionText}>{s}</Text>
+                  <Text style={[styles.sectionText, isDark && styles.textDark]}>{s}</Text>
                 </View>
               ))}
             </CollapsibleSection>
           )}
-          {enrichment.monitoring?.length > 0 && (
+          {(enrichment.monitoring?.length ?? 0) > 0 && (
             <CollapsibleSection
               title={t('diagnosis.monitoring')}
               icon="eye"
               iconColor={Colors.techBlue}
             >
-              {enrichment.monitoring.map((s: string, i: number) => (
+              {enrichment.monitoring!.map((s: string, i: number) => (
                 <View key={i} style={styles.bulletRow}>
                   <View style={[styles.bullet, { backgroundColor: Colors.techBlue }]} />
-                  <Text style={styles.sectionText}>{s}</Text>
+                  <Text style={[styles.sectionText, isDark && styles.textDark]}>{s}</Text>
                 </View>
               ))}
             </CollapsibleSection>
           )}
-          {enrichment.favorable_conditions?.length > 0 && (
+          {(enrichment.favorable_conditions?.length ?? 0) > 0 && (
             <CollapsibleSection
               title={t('diagnosis.favorableConditions')}
               icon="thermometer"
               iconColor={Colors.warmAmber}
             >
-              {enrichment.favorable_conditions.map((s: string, i: number) => (
+              {enrichment.favorable_conditions!.map((s: string, i: number) => (
                 <View key={i} style={styles.bulletRow}>
                   <View style={[styles.bullet, { backgroundColor: Colors.warmAmber }]} />
-                  <Text style={styles.sectionText}>{s}</Text>
+                  <Text style={[styles.sectionText, isDark && styles.textDark]}>{s}</Text>
                 </View>
               ))}
             </CollapsibleSection>
@@ -595,7 +691,9 @@ export default function ResultScreen() {
               icon="trending-down"
               iconColor={Colors.coral}
             >
-              <Text style={styles.sectionText}>{enrichment.economic_impact}</Text>
+              <Text style={[styles.sectionText, isDark && styles.textDark]}>
+                {enrichment.economic_impact}
+              </Text>
             </CollapsibleSection>
           )}
           {enrichment.mip_strategy && (
@@ -604,7 +702,9 @@ export default function ResultScreen() {
               icon="leaf"
               iconColor={Colors.accent}
             >
-              <Text style={styles.sectionText}>{enrichment.mip_strategy}</Text>
+              <Text style={[styles.sectionText, isDark && styles.textDark]}>
+                {enrichment.mip_strategy}
+              </Text>
             </CollapsibleSection>
           )}
         </View>
@@ -653,7 +753,7 @@ export default function ResultScreen() {
             .map(([label, value], i) => (
               <View key={i} style={styles.detailRow}>
                 <Text style={styles.detailLabel}>{label}</Text>
-                <Text style={styles.detailValue}>{value}</Text>
+                <Text style={[styles.detailValue, isDark && styles.textDark]}>{value}</Text>
               </View>
             ))}
         </PremiumCard>
@@ -664,6 +764,8 @@ export default function ResultScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  containerDark: { backgroundColor: Colors.backgroundDark },
+  textDark: { color: Colors.textDark },
   header: { paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20 },
   headerTopRow: {
     flexDirection: 'row',
@@ -694,6 +796,21 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: 2,
   },
+  confidenceWrap: { marginTop: 16 },
+  confidenceLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 6,
+  },
+  confidenceLabel: { fontSize: FontSize.caption, fontWeight: '600', letterSpacing: 0.2 },
+  confidenceValue: { fontSize: FontSize.headline, fontWeight: '700' },
+  confidenceTrack: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  confidenceFill: { height: '100%', borderRadius: 4 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: Spacing.lg },
   badge: {
     flexDirection: 'row',
@@ -705,7 +822,8 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: FontSize.caption, fontWeight: '600' },
   sections: { paddingHorizontal: Spacing.lg, gap: Spacing.sm },
-  sectionText: { fontSize: FontSize.subheadline, lineHeight: 22, flex: 1 },
+  sectionText: { fontSize: FontSize.subheadline, lineHeight: 22, flex: 1, color: Colors.text },
+  sectionTextDark: { color: Colors.textDark },
   bulletRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 6 },
   bullet: { width: 6, height: 6, borderRadius: 3, marginTop: 8 },
   warning: {
@@ -726,7 +844,7 @@ const styles = StyleSheet.create({
   },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   detailLabel: { fontSize: FontSize.subheadline, color: Colors.textSecondary },
-  detailValue: { fontSize: FontSize.subheadline, fontWeight: '600' },
+  detailValue: { fontSize: FontSize.subheadline, fontWeight: '600', color: Colors.text },
   errorCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   errorIcon: {
     width: 100,
@@ -736,7 +854,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  errorTitle: { fontSize: FontSize.title2, fontWeight: '700', marginBottom: 8 },
+  errorTitle: { fontSize: FontSize.title2, fontWeight: '700', marginBottom: 8, color: Colors.text },
   errorMsg: {
     fontSize: FontSize.subheadline,
     color: Colors.textSecondary,

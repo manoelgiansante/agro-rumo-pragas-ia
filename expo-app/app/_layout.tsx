@@ -2,7 +2,7 @@ import '../i18n';
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Sentry from '@sentry/react-native';
@@ -19,6 +19,7 @@ import {
   stopSubscriptionListener,
 } from '../services/subscriptionSync';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { OfflineBanner } from '../components/OfflineBanner';
 import { Colors } from '../constants/theme';
 
@@ -62,18 +63,28 @@ function RootLayoutNav() {
   // Check for OTA updates on app launch (only in production builds)
   useOTAUpdate();
 
+  // Request ATT permission on iOS before any tracking (Apple requirement)
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      requestTrackingPermissionsAsync().catch((err) => {
+        if (__DEV__) console.warn('[ATT] Permission request failed:', err);
+      });
+    }
+  }, []);
   // Initialise RevenueCat for in-app purchases (never blocks startup)
   useEffect(() => {
-    initializePurchases(user?.id).catch((e) =>
-      console.warn('[RevenueCat] Init failed (non-blocking):', e),
-    );
+    initializePurchases(user?.id).catch((e) => {
+      if (__DEV__) console.warn('[RevenueCat] Init failed (non-blocking):', e);
+    });
   }, [user?.id]);
 
   // Initialize analytics and subscription sync when user is authenticated
   useEffect(() => {
     if (user?.id) {
       initAnalytics(user.id);
-      syncSubscriptionToSupabase(user.id).catch(() => {});
+      syncSubscriptionToSupabase(user.id).catch((err: unknown) => {
+        if (__DEV__) console.error('[Layout] Subscription sync failed:', err);
+      });
       startSubscriptionListener(user.id);
       // Set Sentry user context for crash reports
       Sentry.setUser({ id: user.id, email: user.email });
@@ -85,9 +96,18 @@ function RootLayoutNav() {
   }, [user?.id, user?.email]);
 
   useEffect(() => {
-    AsyncStorage.getItem(ONBOARDING_KEY).then((value) => {
-      setHasSeenOnboarding(value === 'true');
-    });
+    let mounted = true;
+    AsyncStorage.getItem(ONBOARDING_KEY)
+      .then((value) => {
+        if (mounted) setHasSeenOnboarding(value === 'true');
+      })
+      .catch((err: unknown) => {
+        if (__DEV__) console.error('[Layout] Failed to read onboarding key:', err);
+        if (mounted) setHasSeenOnboarding(false);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Hide splash screen once auth state and onboarding check are resolved
@@ -124,13 +144,27 @@ function RootLayoutNav() {
     <View style={{ flex: 1 }}>
       <OfflineBanner />
       <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: Platform.OS === 'ios' ? 'slide_from_right' : 'fade',
+        }}
+      >
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="diagnosis" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+        <Stack.Screen
+          name="diagnosis"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="edit-profile"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="paywall"
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
         <Stack.Screen name="terms" />
         <Stack.Screen name="privacy" />
       </Stack>

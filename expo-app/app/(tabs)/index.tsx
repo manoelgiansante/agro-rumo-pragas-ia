@@ -28,6 +28,9 @@ import { getQueueCount } from '../../services/diagnosisQueue';
 import { schedulePestAlertNotifications } from '../../services/notifications';
 import { useTranslation } from 'react-i18next';
 import { useResponsive } from '../../hooks/useResponsive';
+import { checkSubscriptionStatus, isRevenueCatConfigured } from '../../services/purchases';
+
+const FREE_MONTHLY_DIAGNOSES = 3;
 
 const TIP_KEYS = [
   { icon: 'leaf', titleKey: 'home.tips.monitorTitle', descKey: 'home.tips.monitorDesc' },
@@ -49,6 +52,8 @@ export default function HomeScreen() {
   const [weather, setWeather] = useState<WeatherCardData | null>(null);
   const [weatherRaw, setWeatherRaw] = useState<WeatherData | null>(null);
   const [diagnosisCount, setDiagnosisCount] = useState(0);
+  const [monthlyDiagnosisCount, setMonthlyDiagnosisCount] = useState(0);
+  const [isFreePlan, setIsFreePlan] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [weatherError, setWeatherError] = useState(false);
   const [diagnosisError, setDiagnosisError] = useState(false);
@@ -67,9 +72,9 @@ export default function HomeScreen() {
     const highAlerts = alerts.filter((a) => a.severity === 'high');
     if (highAlerts.length > 0) {
       hasScheduledNotifications.current = true;
-      schedulePestAlertNotifications(alerts).catch((err) =>
-        console.warn('[Home] Falha ao agendar notificacoes de alerta:', err),
-      );
+      schedulePestAlertNotifications(alerts).catch((err) => {
+        if (__DEV__) console.warn('[Home] Falha ao agendar notificacoes de alerta:', err);
+      });
     }
   }, [alerts]);
 
@@ -81,57 +86,111 @@ export default function HomeScreen() {
   }, [t]);
 
   const loadData = useCallback(async () => {
+    // Run all data fetches in parallel for faster loading
+    const promises: Promise<void>[] = [];
+
     // Check for pending offline diagnoses
-    try {
-      const qCount = await getQueueCount();
-      setPendingQueueCount(qCount);
-    } catch {
-      // Queue count fetch failed — non-critical, continue
-    }
+    promises.push(
+      getQueueCount()
+        .then((qCount) => setPendingQueueCount(qCount))
+        .catch((err) => {
+          if (__DEV__) console.warn('[Home] Queue count fetch failed:', err);
+        }),
+    );
 
     if (location) {
-      try {
-        setWeatherError(false);
-        const w = await fetchWeather(location.latitude, location.longitude);
-        if (w) {
-          setWeatherRaw(w);
-          setWeather({
-            temperature: w.temperature,
-            humidity: w.humidity,
-            windSpeed: w.windSpeed,
-            dailyPrecipitationSum: w.dailyPrecipitationSum,
-            description: w.description,
-            icon: w.icon,
-            location: cityName || undefined,
-            forecast: w.forecast,
-          });
-        }
-      } catch (err) {
-        console.error('[Home] Erro ao buscar clima:', err);
-        setWeatherError(true);
-      }
+      promises.push(
+        (async () => {
+          try {
+            setWeatherError(false);
+            const w = await fetchWeather(location.latitude, location.longitude);
+            if (w) {
+              setWeatherRaw(w);
+              setWeather({
+                temperature: w.temperature,
+                humidity: w.humidity,
+                windSpeed: w.windSpeed,
+                dailyPrecipitationSum: w.dailyPrecipitationSum,
+                description: w.description,
+                icon: w.icon,
+                location: cityName || undefined,
+                forecast: w.forecast,
+              });
+            }
+          } catch (err) {
+            if (__DEV__) console.error('[Home] Erro ao buscar clima:', err);
+            setWeatherError(true);
+          }
+        })(),
+      );
     }
+
     if (session?.access_token && user?.id) {
-      try {
-        setDiagnosisError(false);
-        const { count, error } = await supabase
-          .from('pragas_diagnoses')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-        if (error) throw error;
-        setDiagnosisCount(count ?? 0);
-      } catch (err) {
-        console.error('[Home] Erro ao buscar diagnosticos:', err);
-        setDiagnosisError(true);
+      promises.push(
+        (async () => {
+          try {
+            setDiagnosisError(false);
+            const { count, error } = await supabase
+              .from('pragas_diagnoses')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', user.id);
+            if (error) throw error;
+            setDiagnosisCount(count ?? 0);
+          } catch (err) {
+            if (__DEV__) console.error('[Home] Erro ao buscar diagnosticos:', err);
+            setDiagnosisError(true);
+          }
+        })(),
+      );
+
+      // Month-scoped count for the free-plan remaining counter
+      promises.push(
+        (async () => {
+          try {
+            const firstOfMonth = new Date();
+            firstOfMonth.setDate(1);
+            firstOfMonth.setHours(0, 0, 0, 0);
+            const { count } = await supabase
+              .from('pragas_diagnoses')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', user.id)
+              .gte('created_at', firstOfMonth.toISOString());
+            setMonthlyDiagnosisCount(count ?? 0);
+          } catch (err) {
+            if (__DEV__) console.warn('[Home] Monthly count fetch failed:', err);
+          }
+        })(),
+      );
+
+      // Subscription status (don't block if RevenueCat not configured)
+      if (isRevenueCatConfigured()) {
+        promises.push(
+          (async () => {
+            try {
+              const { isActive } = await checkSubscriptionStatus();
+              setIsFreePlan(!isActive);
+            } catch (err) {
+              if (__DEV__) console.warn('[Home] Subscription check failed:', err);
+            }
+          })(),
+        );
       }
     }
+
+    await Promise.all(promises);
   }, [location, cityName, session, user]);
 
   useEffect(() => {
     getCurrentLocation();
   }, [getCurrentLocation]);
   useEffect(() => {
-    loadData().finally(() => setIsInitialLoading(false));
+    let mounted = true;
+    loadData().finally(() => {
+      if (mounted) setIsInitialLoading(false);
+    });
+    return () => {
+      mounted = false;
+    };
   }, [loadData]);
 
   const onRefresh = async () => {
@@ -178,11 +237,19 @@ export default function HomeScreen() {
       }
     >
       <LinearGradient
-        colors={Gradients.hero as any}
+        colors={Gradients.hero}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.hero}
       >
+        {/* Subtle bottom fade to blend hero into content */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.18)']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
         <View style={styles.heroContent}>
           <Text style={styles.greeting}>{greetingText}</Text>
           <Text style={styles.userName}>
@@ -197,7 +264,7 @@ export default function HomeScreen() {
           isTablet && {
             maxWidth: contentMaxWidth,
             alignSelf: 'center' as const,
-            width: '100%' as any,
+            width: '100%',
           },
         ]}
       >
@@ -230,29 +297,80 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           onPress={() => router.push('/diagnosis/camera')}
-          activeOpacity={0.8}
+          activeOpacity={0.88}
           accessibilityLabel={t('home.diagnosePestA11y')}
           accessibilityRole="button"
           accessibilityHint={t('home.diagnosePestHint')}
+          style={styles.ctaShadow}
         >
-          <PremiumCard>
-            <View style={styles.scanRow}>
-              <LinearGradient colors={Gradients.hero as any} style={styles.scanIcon}>
-                <Ionicons name="camera" size={26} color="#FFF" accessibilityElementsHidden />
-              </LinearGradient>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.scanTitle, isDark && styles.textDark]}>
-                  {t('home.diagnosePest')}
-                </Text>
-                <Text style={styles.scanSub}>{t('home.photoOrGallery')}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.systemGray3} />
+          <LinearGradient
+            colors={Gradients.hero}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.ctaContainer}
+          >
+            <View style={styles.ctaIconCircle}>
+              <Ionicons name="camera" size={30} color="#FFF" accessibilityElementsHidden />
             </View>
-          </PremiumCard>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.ctaTitle}>{t('home.diagnoseNow')}</Text>
+              <Text style={styles.ctaSub}>{t('home.scanCtaHint')}</Text>
+            </View>
+            <View style={styles.ctaArrow}>
+              <Ionicons name="arrow-forward" size={20} color="#FFF" accessibilityElementsHidden />
+            </View>
+          </LinearGradient>
         </TouchableOpacity>
 
+        {isFreePlan &&
+          !diagnosisError &&
+          (() => {
+            const remaining = Math.max(0, FREE_MONTHLY_DIAGNOSES - monthlyDiagnosisCount);
+            const exhausted = remaining === 0;
+            return (
+              <TouchableOpacity
+                onPress={() => router.push('/paywall')}
+                activeOpacity={0.8}
+                style={[styles.trialCounter, exhausted && styles.trialCounterExhausted]}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  exhausted
+                    ? t('home.freeDiagnosesUsed')
+                    : t('home.freeDiagnosesRemaining', {
+                        count: remaining,
+                        total: FREE_MONTHLY_DIAGNOSES,
+                      })
+                }
+              >
+                <Ionicons
+                  name={exhausted ? 'alert-circle' : 'sparkles'}
+                  size={16}
+                  color={exhausted ? Colors.coral : Colors.accent}
+                />
+                <Text
+                  style={[
+                    styles.trialCounterText,
+                    { color: exhausted ? Colors.coral : Colors.accent },
+                  ]}
+                >
+                  {exhausted
+                    ? t('home.freeDiagnosesUsed')
+                    : t('home.freeDiagnosesRemaining', {
+                        count: remaining,
+                        total: FREE_MONTHLY_DIAGNOSES,
+                      })}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={14}
+                  color={exhausted ? Colors.coral : Colors.accent}
+                />
+              </TouchableOpacity>
+            );
+          })()}
+
         {pendingQueueCount > 0 && (
-          <View style={styles.pendingCard}>
+          <View style={styles.pendingCard} accessible accessibilityRole="alert">
             <Ionicons name="cloud-upload-outline" size={18} color={Colors.warmAmber} />
             <Text style={styles.pendingText}>
               {pendingQueueCount} {t('home.pendingDiagnoses')} — {t('home.waitingConnection')}
@@ -270,7 +388,7 @@ export default function HomeScreen() {
                 accessibilityRole="summary"
               >
                 <Ionicons
-                  name={stat.icon as any}
+                  name={stat.icon as keyof typeof Ionicons.glyphMap}
                   size={22}
                   color={stat.color}
                   accessibilityElementsHidden
@@ -312,9 +430,18 @@ export default function HomeScreen() {
         </Text>
         {TIP_KEYS.map((tip, i) => (
           <PremiumCard key={i} style={{ marginBottom: Spacing.sm }}>
-            <View style={styles.tipRow}>
+            <View
+              style={styles.tipRow}
+              accessible
+              accessibilityLabel={`${t(tip.titleKey)}: ${t(tip.descKey)}`}
+            >
               <View style={[styles.tipIcon, { backgroundColor: Colors.accent + '1F' }]}>
-                <Ionicons name={tip.icon as any} size={18} color={Colors.accent} />
+                <Ionicons
+                  name={tip.icon as keyof typeof Ionicons.glyphMap}
+                  size={18}
+                  color={Colors.accent}
+                  accessibilityElementsHidden
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.tipTitle, isDark && styles.textDark]}>{t(tip.titleKey)}</Text>
@@ -347,6 +474,65 @@ const styles = StyleSheet.create({
   },
   scanTitle: { fontSize: FontSize.title3, fontWeight: '700' },
   scanSub: { fontSize: FontSize.subheadline, color: Colors.textSecondary, marginTop: 2 },
+  ctaShadow: {
+    shadowColor: Colors.accentDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    elevation: 8,
+    borderRadius: BorderRadius.lg,
+  },
+  ctaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+  },
+  ctaIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ctaTitle: { fontSize: FontSize.title3, fontWeight: '700', color: '#FFF' },
+  ctaSub: {
+    fontSize: FontSize.subheadline,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
+  },
+  ctaArrow: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  trialCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.accent + '14',
+    borderWidth: 1,
+    borderColor: Colors.accent + '33',
+  },
+  trialCounterExhausted: {
+    backgroundColor: Colors.coral + '14',
+    borderColor: Colors.coral + '33',
+  },
+  trialCounterText: {
+    fontSize: FontSize.caption,
+    fontWeight: '600',
+    flexShrink: 1,
+  },
   statsRow: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.lg },
   statCard: { alignItems: 'center', gap: 6 },
   statValue: { fontSize: FontSize.subheadline, fontWeight: '700' },

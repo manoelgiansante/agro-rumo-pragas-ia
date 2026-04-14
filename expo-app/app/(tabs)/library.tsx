@@ -11,7 +11,9 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../constants/theme';
+import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Spacing, BorderRadius, FontSize, Gradients } from '../../constants/theme';
 import { CROPS } from '../../constants/crops';
 import { PremiumCard } from '../../components/PremiumCard';
 import { SearchInput } from '../../components/SearchInput';
@@ -137,6 +139,48 @@ const severityColor: Record<string, string> = {
   low: Colors.accent,
 };
 
+const SEVERITY_LABELS: Record<string, string> = {
+  critical: 'severity.critical',
+  high: 'severity.high',
+  medium: 'severity.medium',
+  low: 'severity.low',
+};
+
+const PestItem = React.memo(function PestItem({
+  item,
+  isDark,
+}: {
+  item: { name: string; scientific: string; severity: string; crop: string };
+  isDark: boolean;
+}) {
+  const { t } = useTranslation();
+  const cropInfo = CROPS.find((c) => c.id === item.crop);
+  const severityLabelKey = SEVERITY_LABELS[item.severity] || 'severity.medium';
+
+  return (
+    <PremiumCard style={{ marginBottom: Spacing.sm }}>
+      <View
+        style={styles.pestRow}
+        accessible
+        accessibilityLabel={`${item.name}, ${item.scientific}, ${t(severityLabelKey)}, ${cropInfo?.displayName || item.crop}`}
+        accessibilityRole="summary"
+      >
+        <View
+          style={[styles.severityDot, { backgroundColor: severityColor[item.severity] }]}
+          accessibilityElementsHidden
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.pestName, isDark && styles.textDark]}>{item.name}</Text>
+          <Text style={styles.pestScientific}>{item.scientific}</Text>
+        </View>
+        <Text style={styles.cropBadge} accessibilityElementsHidden>
+          {cropInfo?.icon}
+        </Text>
+      </View>
+    </PremiumCard>
+  );
+});
+
 export default function LibraryScreen() {
   const { t } = useTranslation();
   const isDark = useColorScheme() === 'dark';
@@ -228,6 +272,9 @@ export default function LibraryScreen() {
           { padding: Spacing.lg, paddingBottom: 100 },
           isTablet && { maxWidth: contentMaxWidth, alignSelf: 'center' as const, width: '100%' },
         ]}
+        initialNumToRender={15}
+        maxToRenderPerBatch={10}
+        windowSize={5}
         ListEmptyComponent={
           <View style={styles.center}>
             <Ionicons name="search-outline" size={48} color={Colors.systemGray3} />
@@ -248,22 +295,26 @@ export default function LibraryScreen() {
                 <Text style={styles.clearFilterText}>{t('library.clearFilters')}</Text>
               </TouchableOpacity>
             )}
+            <TouchableOpacity
+              onPress={() => router.push('/diagnosis/camera')}
+              activeOpacity={0.85}
+              style={styles.emptyCtaShadow}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.diagnoseNow')}
+            >
+              <LinearGradient
+                colors={Gradients.hero}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.emptyCta}
+              >
+                <Ionicons name="camera" size={18} color="#FFF" />
+                <Text style={styles.emptyCtaText}>{t('home.diagnoseNow')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         }
-        renderItem={({ item }) => (
-          <PremiumCard style={{ marginBottom: Spacing.sm }}>
-            <View style={styles.pestRow}>
-              <View
-                style={[styles.severityDot, { backgroundColor: severityColor[item.severity] }]}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.pestName, isDark && styles.textDark]}>{item.name}</Text>
-                <Text style={styles.pestScientific}>{item.scientific}</Text>
-              </View>
-              <Text style={styles.cropBadge}>{CROPS.find((c) => c.id === item.crop)?.icon}</Text>
-            </View>
-          </PremiumCard>
-        )}
+        renderItem={({ item }) => <PestItem item={item} isDark={isDark} />}
       />
     </KeyboardAvoidingView>
   );
@@ -311,4 +362,26 @@ const styles = StyleSheet.create({
   },
   clearFilterText: { fontSize: FontSize.subheadline, fontWeight: '600', color: Colors.accent },
   textDark: { color: Colors.textDark },
+  emptyCtaShadow: {
+    marginTop: Spacing.lg,
+    shadowColor: Colors.accentDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    elevation: 5,
+    borderRadius: BorderRadius.lg,
+  },
+  emptyCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: 12,
+    borderRadius: BorderRadius.lg,
+  },
+  emptyCtaText: {
+    color: '#FFF',
+    fontSize: FontSize.headline,
+    fontWeight: '700',
+  },
 });

@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +25,8 @@ const JPEG_QUALITY = 0.75;
 
 export default function CameraScreen() {
   const { t } = useTranslation();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [processing, setProcessing] = useState(false);
   const { setImage } = useDiagnosis();
 
@@ -76,7 +79,7 @@ export default function CameraScreen() {
         setImage(compressed.uri, compressed.base64);
         router.push('/diagnosis/crop-select');
       } catch (error) {
-        console.error('Image compression failed:', error);
+        if (__DEV__) console.error('Image compression failed:', error);
         Alert.alert(t('diagnosis.imageError'), t('diagnosis.imageErrorMsg'));
       } finally {
         setProcessing(false);
@@ -85,7 +88,7 @@ export default function CameraScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDark && styles.containerDark]}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -94,11 +97,13 @@ export default function CameraScreen() {
           accessibilityRole="button"
           accessibilityHint={t('diagnosis.closeHint')}
         >
-          <Ionicons name="close" size={22} color={Colors.text} />
+          <Ionicons name="close" size={22} color={isDark ? Colors.textDark : Colors.text} />
         </TouchableOpacity>
         <View style={styles.headerTitle}>
           <Ionicons name="camera" size={16} color={Colors.accent} />
-          <Text style={styles.headerText}>{t('home.diagnosePest')}</Text>
+          <Text style={[styles.headerText, isDark && styles.textDark]}>
+            {t('home.diagnosePest')}
+          </Text>
         </View>
         <View style={{ width: 36 }} />
       </View>
@@ -114,11 +119,24 @@ export default function CameraScreen() {
             >
               <Ionicons name="camera" size={48} color={Colors.accent} />
             </View>
+            {/* Corner brackets: subtle framing guide — "frame the leaf in the center" */}
+            <View style={[styles.frameCorner, styles.frameCornerTL]} pointerEvents="none" />
+            <View style={[styles.frameCorner, styles.frameCornerTR]} pointerEvents="none" />
+            <View style={[styles.frameCorner, styles.frameCornerBL]} pointerEvents="none" />
+            <View style={[styles.frameCorner, styles.frameCornerBR]} pointerEvents="none" />
           </View>
         </View>
 
-        <Text style={styles.title}>{t('diagnosis.aiTitle')}</Text>
+        <Text style={[styles.title, isDark && styles.textDark]}>{t('diagnosis.aiTitle')}</Text>
         <Text style={styles.subtitle}>{t('diagnosis.aiSubtitle')}</Text>
+
+        <View style={styles.frameGuide} accessible accessibilityRole="text">
+          <Ionicons name="scan-outline" size={16} color={Colors.accent} />
+          <Text style={styles.frameGuideText}>{t('diagnosis.frameLeafGuide')}</Text>
+          <Text style={styles.frameGuideDot}>·</Text>
+          <Ionicons name="sunny-outline" size={14} color={Colors.warmAmber} />
+          <Text style={styles.frameGuideHint}>{t('diagnosis.frameLeafHint')}</Text>
+        </View>
 
         <View style={styles.buttons}>
           <TouchableOpacity
@@ -130,7 +148,7 @@ export default function CameraScreen() {
           >
             <PremiumCard>
               <View style={styles.btnRow}>
-                <LinearGradient colors={Gradients.hero as any} style={styles.btnIcon}>
+                <LinearGradient colors={Gradients.hero} style={styles.btnIcon}>
                   <Ionicons name="camera" size={24} color="#FFF" accessibilityElementsHidden />
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
@@ -183,8 +201,13 @@ export default function CameraScreen() {
               },
               { icon: 'image', color: Colors.techIndigo, text: t('diagnosis.tipSharp') },
             ].map((tip, i) => (
-              <View key={i} style={styles.tipRow}>
-                <Ionicons name={tip.icon as any} size={16} color={tip.color} />
+              <View key={i} style={styles.tipRow} accessible accessibilityLabel={tip.text}>
+                <Ionicons
+                  name={tip.icon as keyof typeof Ionicons.glyphMap}
+                  size={16}
+                  color={tip.color}
+                  accessibilityElementsHidden
+                />
                 <Text style={styles.tipText}>{tip.text}</Text>
               </View>
             ))}
@@ -193,7 +216,12 @@ export default function CameraScreen() {
       </View>
 
       {processing && (
-        <View style={styles.processingOverlay}>
+        <View
+          style={styles.processingOverlay}
+          accessible
+          accessibilityLabel={t('diagnosis.optimizing')}
+          accessibilityRole="progressbar"
+        >
           <View style={styles.processingCard}>
             <ActivityIndicator size="large" color={Colors.accent} />
             <Text style={styles.processingText}>{t('diagnosis.optimizing')}</Text>
@@ -206,6 +234,8 @@ export default function CameraScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  containerDark: { backgroundColor: Colors.backgroundDark },
+  textDark: { color: Colors.textDark },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -238,7 +268,61 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 16,
+  },
+  frameCorner: {
+    position: 'absolute',
+    width: 22,
+    height: 22,
+    borderColor: Colors.accent,
+  },
+  frameCornerTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 8 },
+  frameCornerTR: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderTopRightRadius: 8,
+  },
+  frameCornerBL: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    borderBottomLeftRadius: 8,
+  },
+  frameCornerBR: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    borderBottomRightRadius: 8,
+  },
+  frameGuide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.accent + '10',
+    marginBottom: 20,
+  },
+  frameGuideText: {
+    fontSize: FontSize.caption,
+    color: Colors.accent,
+    fontWeight: '600',
+  },
+  frameGuideDot: {
+    fontSize: FontSize.caption,
+    color: Colors.systemGray3,
+    fontWeight: '700',
+  },
+  frameGuideHint: {
+    fontSize: FontSize.caption,
+    color: Colors.textSecondary,
   },
   buttons: { width: '100%', gap: 12 },
   btnRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
@@ -264,7 +348,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   processingCard: {
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.card,
     borderRadius: BorderRadius.lg,
     padding: Spacing.xl,
     alignItems: 'center',

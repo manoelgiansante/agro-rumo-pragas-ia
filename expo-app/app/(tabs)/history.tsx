@@ -12,9 +12,11 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../constants/theme';
+import { useFocusEffect, router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Spacing, BorderRadius, FontSize, Gradients } from '../../constants/theme';
 import { DiagnosisCard } from '../../components/DiagnosisCard';
+import type { DiagnosisResult } from '../../types/diagnosis';
 import { SearchInput } from '../../components/SearchInput';
 import { supabase } from '../../services/supabase';
 import { useAuthContext } from '../../contexts/AuthContext';
@@ -28,7 +30,7 @@ export default function HistoryScreen() {
   const { user, session } = useAuthContext();
   const isDark = useColorScheme() === 'dark';
   const { isTablet, contentMaxWidth } = useResponsive();
-  const [diagnoses, setDiagnoses] = useState<any[]>([]);
+  const [diagnoses, setDiagnoses] = useState<DiagnosisResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -48,7 +50,7 @@ export default function HistoryScreen() {
       if (queryError) throw queryError;
       setDiagnoses(data ?? []);
     } catch (err) {
-      console.error('[History] Erro ao buscar diagnosticos:', err);
+      if (__DEV__) console.error('[History] Erro ao buscar diagnosticos:', err);
       setError(true);
     }
     setLoading(false);
@@ -68,13 +70,18 @@ export default function HistoryScreen() {
         text: t('history.deleteTitle'),
         style: 'destructive',
         onPress: async () => {
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          const { error } = await supabase.from('pragas_diagnoses').delete().eq('id', id);
-          if (error) {
+          try {
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            const { error } = await supabase.from('pragas_diagnoses').delete().eq('id', id);
+            if (error) {
+              Alert.alert(t('common.error'), t('history.deleteError'));
+              return;
+            }
+            setDiagnoses((d) => d.filter((x) => x.id !== id));
+          } catch (err) {
+            if (__DEV__) console.error('[History] Failed to delete diagnosis:', err);
             Alert.alert(t('common.error'), t('history.deleteError'));
-            return;
           }
-          setDiagnoses((d) => d.filter((x) => x.id !== id));
         },
       },
     ]);
@@ -98,7 +105,7 @@ export default function HistoryScreen() {
     [diagnoses, search],
   );
 
-  const keyExtractor = useCallback((item: any) => item.id, []);
+  const keyExtractor = useCallback((item: DiagnosisResult) => item.id, []);
 
   if (loading) {
     return <HistorySkeleton />;
@@ -159,14 +166,61 @@ export default function HistoryScreen() {
             colors={[Colors.accent]}
           />
         }
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
         ListEmptyComponent={
-          <View style={styles.center}>
-            <Ionicons name="document-text-outline" size={48} color={Colors.systemGray3} />
-            <Text style={[styles.emptyTitle, isDark && styles.textDark]}>
-              {t('history.noDiagnoses')}
-            </Text>
-            <Text style={styles.emptyDesc}>{t('history.noDiagnosesDesc')}</Text>
-          </View>
+          diagnoses.length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIllustration}>
+                <LinearGradient
+                  colors={[Colors.accentLight + '33', Colors.accent + '14']}
+                  style={styles.emptyIllustrationBg}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                />
+                <View style={styles.emptyIllustrationRing}>
+                  <LinearGradient
+                    colors={Gradients.hero}
+                    style={styles.emptyIllustrationInner}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons name="leaf" size={36} color="#FFF" />
+                  </LinearGradient>
+                </View>
+              </View>
+              <Text style={[styles.emptyTitle, isDark && styles.textDark]}>
+                {t('diagnosis.emptyHistoryTitle')}
+              </Text>
+              <Text style={styles.emptyDesc}>{t('diagnosis.emptyHistoryDesc')}</Text>
+              <TouchableOpacity
+                onPress={() => router.push('/diagnosis/camera')}
+                activeOpacity={0.85}
+                style={styles.emptyCtaShadow}
+                accessibilityRole="button"
+                accessibilityLabel={t('diagnosis.startFirstDiagnosis')}
+              >
+                <LinearGradient
+                  colors={Gradients.hero}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.emptyCta}
+                >
+                  <Ionicons name="camera" size={18} color="#FFF" />
+                  <Text style={styles.emptyCtaText}>{t('diagnosis.startFirstDiagnosis')}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.center}>
+              <Ionicons name="search-outline" size={48} color={Colors.systemGray3} />
+              <Text style={[styles.emptyTitle, isDark && styles.textDark]}>
+                {t('history.noDiagnoses')}
+              </Text>
+              <Text style={styles.emptyDesc}>{t('history.noDiagnosesDesc')}</Text>
+            </View>
+          )
         }
         ListHeaderComponent={
           <Text style={[styles.count, isDark && styles.textDark]}>
@@ -217,5 +271,65 @@ const styles = StyleSheet.create({
     fontSize: FontSize.subheadline,
     fontWeight: '600',
     color: Colors.white,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyIllustration: {
+    width: 160,
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  emptyIllustrationBg: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+  },
+  emptyIllustrationRing: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  emptyIllustrationInner: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyCtaShadow: {
+    marginTop: Spacing.xl,
+    shadowColor: Colors.accentDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+    borderRadius: BorderRadius.lg,
+  },
+  emptyCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.lg,
+  },
+  emptyCtaText: {
+    color: '#FFF',
+    fontSize: FontSize.headline,
+    fontWeight: '700',
   },
 });
