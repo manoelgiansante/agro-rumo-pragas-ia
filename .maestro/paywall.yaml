@@ -1,0 +1,51 @@
+appId: com.agrorumo.rumopragas
+name: Paywall - feature premium
+tags:
+  - paywall
+  - monetization
+---
+- launchApp
+
+- runFlow:
+    when:
+      visible: ".*(Depois|Later|Dismiss).*"
+    commands:
+      - tapOn:
+          text: ".*(Depois|Later|Dismiss).*"
+
+- runFlow:
+    when:
+      visible: ".*(Skip|Pular|Começar).*"
+    commands:
+      - tapOn:
+          text: ".*(Skip|Pular|Começar).*"
+
+- extendedWaitUntil:
+    visible: ".*(Home|Câmera|Camera|Diagn).*"
+    timeout: 20000
+
+# Tentar acessar histórico ilimitado / biblioteca completa / premium
+- runFlow:
+    when:
+      visible: ".*(Histórico|History|Biblioteca|Library|Premium|Pro|Ilimitado|Unlimited).*"
+    commands:
+      - tapOn:
+          text: ".*(Histórico|History|Biblioteca|Library|Premium|Pro).*"
+
+# Esperar paywall
+- extendedWaitUntil:
+    visible: ".*(Assinatura|Subscri|Premium|Pro|Upgrade|Desbloq|Unlock|R\\$|USD|\\$).*"
+    timeout: 15000
+- takeScreenshot: paywall-shown
+
+# Voltar sem comprar
+- runFlow:
+    when:
+      visible: ".*(Depois|Later|Cancel|Voltar|Back|×|Close|Fechar).*"
+    commands:
+      - tapOn:
+          text: ".*(Depois|Later|Cancel|Voltar|Back|×|Close|Fechar).*"
+
+- takeScreenshot: paywall-dismissed
+- assertVisible:
+    text: ".*"

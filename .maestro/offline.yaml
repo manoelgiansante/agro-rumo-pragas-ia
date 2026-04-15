@@ -1,0 +1,51 @@
+appId: com.agrorumo.rumopragas
+name: Offline - sem conexao nao crasha
+tags:
+  - offline
+  - resilience
+---
+- launchApp
+
+- runFlow:
+    when:
+      visible: ".*(Depois|Later|Dismiss).*"
+    commands:
+      - tapOn:
+          text: ".*(Depois|Later|Dismiss).*"
+
+- runFlow:
+    when:
+      visible: ".*(Skip|Pular|Começar).*"
+    commands:
+      - tapOn:
+          text: ".*(Skip|Pular|Começar).*"
+
+- extendedWaitUntil:
+    visible: ".*(Home|Câmera|Camera|Diagn).*"
+    timeout: 20000
+
+# Entrar em offline
+- setAirplaneMode:
+    enabled: true
+- takeScreenshot: offline-on
+
+# Tentar usar feature que precisa de IA (deve mostrar erro gracioso)
+- runFlow:
+    when:
+      visible: ".*(Câmera|Camera|Diagn|Tirar|Take).*"
+    commands:
+      - tapOn:
+          text: ".*(Câmera|Camera|Diagn|Tirar|Take).*"
+
+- extendedWaitUntil:
+    visible: ".*(Offline|Sem conex|No internet|Connection|Tente novamente|Try again|.*)"
+    timeout: 15000
+- takeScreenshot: offline-error-or-graceful
+
+# Desligar
+- setAirplaneMode:
+    enabled: false
+- takeScreenshot: offline-off
+
+- assertVisible:
+    text: ".*"

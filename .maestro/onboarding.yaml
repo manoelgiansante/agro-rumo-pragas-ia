@@ -1,0 +1,25 @@
+appId: com.agrorumo.rumopragas
+name: Onboarding Splash
+tags:
+  - smoke
+  - golden
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+
+- runFlow:
+    when:
+      visible: ".*(Depois|Later|Dismiss|Agora não).*"
+    commands:
+      - tapOn:
+          text: ".*(Depois|Later|Dismiss|Agora não).*"
+
+- extendedWaitUntil:
+    visible: ".*(Rumo|Pragas|Entrar|Sign In|Começar|Get Started|Skip|Pular).*"
+    timeout: 20000
+
+- takeScreenshot: onboarding-loaded
+
+- assertVisible:
+    text: ".*(Rumo|Pragas|Entrar|Sign In|Email|Senha|Pular|Skip|Começar|Get Started).*"

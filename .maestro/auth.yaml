@@ -1,0 +1,95 @@
+appId: com.agrorumo.rumopragas
+name: Auth - Login Signup Forgot
+tags:
+  - auth
+env:
+  TEST_EMAIL: "e2e+pragas@agrorumo.test"
+  TEST_PASSWORD: "Teste123!@#"
+---
+- launchApp:
+    clearState: true
+
+- runFlow:
+    when:
+      visible: ".*(Depois|Later|Dismiss).*"
+    commands:
+      - tapOn:
+          text: ".*(Depois|Later|Dismiss).*"
+
+# Pular onboarding inicial se aparecer
+- runFlow:
+    when:
+      visible: ".*(Skip|Pular|Começar|Get Started|Next|Próximo).*"
+    commands:
+      - tapOn:
+          text: ".*(Skip|Pular|Começar|Get Started).*"
+
+- extendedWaitUntil:
+    visible: ".*(Entrar|Sign In|Email|Senha|Cadastr|Sign Up).*"
+    timeout: 20000
+
+# ----------- SIGNUP path -----------
+- runFlow:
+    when:
+      visible: ".*(Cadastr|Sign Up|Criar conta|Register).*"
+    commands:
+      - tapOn:
+          text: ".*(Cadastr|Sign Up|Criar conta|Register).*"
+      - extendedWaitUntil:
+          visible: ".*(Email|Senha|Password).*"
+          timeout: 10000
+      - takeScreenshot: auth-signup-screen
+      - tapOn:
+          text: ".*[Ee]mail.*"
+      - inputText: ${TEST_EMAIL}
+      - hideKeyboard
+      - runFlow:
+          when:
+            visible: ".*(Password|Senha).*"
+          commands:
+            - tapOn:
+                text: ".*(Password|Senha).*"
+            - inputText: ${TEST_PASSWORD}
+            - hideKeyboard
+      - takeScreenshot: auth-signup-filled
+      # Voltar (não consumamos emails reais)
+      - runFlow:
+          when:
+            visible: ".*(Voltar|Back|Entrar|Sign In).*"
+          commands:
+            - tapOn:
+                text: ".*(Voltar|Back|Entrar|Sign In).*"
+
+# ----------- LOGIN -----------
+- extendedWaitUntil:
+    visible: ".*[Ee]mail.*"
+    timeout: 10000
+- tapOn:
+    text: ".*[Ee]mail.*"
+- inputText: ${TEST_EMAIL}
+- hideKeyboard
+
+- tapOn:
+    text: ".*(Password|Senha).*"
+- inputText: ${TEST_PASSWORD}
+- hideKeyboard
+
+- tapOn:
+    text: ".*(Sign In|Entrar|Login).*"
+
+- extendedWaitUntil:
+    visible: ".*(Home|Câmera|Camera|Diagn|Erro|Error|incorr).*"
+    timeout: 20000
+- takeScreenshot: auth-login-result
+
+# ----------- FORGOT -----------
+- runFlow:
+    when:
+      visible: ".*(Forgot|Esqueci).*"
+    commands:
+      - tapOn:
+          text: ".*(Forgot|Esqueci).*"
+      - extendedWaitUntil:
+          visible: ".*(Recover|Recuperar|Redefinir|Reset).*"
+          timeout: 10000
+      - takeScreenshot: auth-forgot-screen

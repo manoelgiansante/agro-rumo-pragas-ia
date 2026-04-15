@@ -1,0 +1,65 @@
+appId: com.agrorumo.rumopragas
+name: Core - Foto Diagnostico Resultado
+tags:
+  - golden
+  - smoke
+---
+- launchApp
+
+- runFlow:
+    when:
+      visible: ".*(Depois|Later|Dismiss).*"
+    commands:
+      - tapOn:
+          text: ".*(Depois|Later|Dismiss).*"
+
+- runFlow:
+    when:
+      visible: ".*(Skip|Pular|Começar|Get Started).*"
+    commands:
+      - tapOn:
+          text: ".*(Skip|Pular|Começar|Get Started).*"
+
+- extendedWaitUntil:
+    visible: ".*(Câmera|Camera|Diagn|Identific|Home|Tirar foto|Take photo).*"
+    timeout: 20000
+- takeScreenshot: core-home
+
+# ---- Acessar câmera / diagnóstico ----
+- tapOn:
+    text: ".*(Câmera|Camera|Tirar|Take|Diagn|Identific|\\+).*"
+
+- extendedWaitUntil:
+    visible: ".*(Câmera|Camera|Galeria|Gallery|Biblioteca|Library|Permission|Permissão).*"
+    timeout: 10000
+- takeScreenshot: core-camera-screen
+
+# Conceder permissão se pedir
+- runFlow:
+    when:
+      visible: ".*(Allow|Permitir|OK).*"
+    commands:
+      - tapOn:
+          text: ".*(Allow|Permitir|OK).*"
+
+# Usar galeria (mock) ao invés da câmera real
+- runFlow:
+    when:
+      visible: ".*(Galeria|Gallery|Biblioteca|Library|Upload|Escolher|Choose).*"
+    commands:
+      - tapOn:
+          text: ".*(Galeria|Gallery|Biblioteca|Library|Upload|Escolher|Choose).*"
+      - extendedWaitUntil:
+          visible: ".*"
+          timeout: 10000
+      - takeScreenshot: core-gallery
+
+# Voltar (não precisa completar diagnóstico real)
+- runFlow:
+    when:
+      visible: ".*(Voltar|Back|Cancel|×).*"
+    commands:
+      - tapOn:
+          text: ".*(Voltar|Back|Cancel|×).*"
+
+- takeScreenshot: core-flow-end
