@@ -1,4 +1,4 @@
-# Meta Ads Copy — Rumo Praga (Pragas IA)
+# Meta Ads Copy — Rumo Pragas (Pragas IA)
 
 > **Compliance guardrails (Meta + Anti-Ban):**
 > - Sem health claims ou "garantia de economia" sem disclaimer
@@ -24,11 +24,11 @@
 3. Identifique a praga antes que ela se alastre.
 
 ### Primary Texts (texto principal, ~125 caracteres visíveis)
-1. Lagarta nova, mancha estranha, folha caindo… e agora? Tire uma foto pelo app Rumo Praga e receba o diagnóstico em segundos, mesmo sem internet boa no talhão. 7 dias grátis, sem cartão. O app é auxiliar e não substitui o receituário agronômico.
+1. Lagarta nova, mancha estranha, folha caindo… e agora? Tire uma foto pelo app Rumo Pragas e receba o diagnóstico em segundos, mesmo sem internet boa no talhão. 7 dias grátis, sem cartão. O app é auxiliar e não substitui o receituário agronômico.
 
-2. Ferrugem asiática, cigarrinha, broca, percevejo. Se você não identificar cedo, o estrago só cresce. O Rumo Praga usa IA treinada com lavouras brasileiras para indicar a praga mais provável a partir de uma foto. Teste 7 dias grátis. Ferramenta auxiliar, não dispensa agrônomo.
+2. Ferrugem asiática, cigarrinha, broca, percevejo. Se você não identificar cedo, o estrago só cresce. O Rumo Pragas usa IA treinada com lavouras brasileiras para indicar a praga mais provável a partir de uma foto. Teste 7 dias grátis. Ferramenta auxiliar, não dispensa agrônomo.
 
-3. Sabe aquela praga que você nunca tinha visto antes? O app Rumo Praga compara sua foto com +500 pragas e doenças catalogadas e mostra qual parece ser a mais provável e o que os técnicos costumam recomendar. 7 dias grátis, sem cartão. Resultado individual pode variar.
+3. Sabe aquela praga que você nunca tinha visto antes? O app Rumo Pragas compara sua foto com +500 pragas e doenças catalogadas e mostra qual parece ser a mais provável e o que os técnicos costumam recomendar. 7 dias grátis, sem cartão. Resultado individual pode variar.
 
 ### Descriptions (link description, até 30 caracteres úteis)
 1. 7 dias grátis. Sem cartão.
@@ -45,9 +45,9 @@
 3. Seu agrônomo no bolso, direto no celular.
 
 ### Primary Texts
-1. Aponta a câmera para a folha, tira a foto e pronto: o Rumo Praga mostra a praga mais provável, o nível de severidade e o que os técnicos costumam recomendar. Funciona até sem sinal no campo — processa quando a internet voltar. 7 dias grátis para testar.
+1. Aponta a câmera para a folha, tira a foto e pronto: o Rumo Pragas mostra a praga mais provável, o nível de severidade e o que os técnicos costumam recomendar. Funciona até sem sinal no campo — processa quando a internet voltar. 7 dias grátis para testar.
 
-2. Cansou de mandar foto pro grupo de WhatsApp esperando alguém palpitar? O Rumo Praga usa IA treinada com imagens reais de lavouras brasileiras para dar uma resposta objetiva na hora. Laudo em PDF pra enviar ao seu agrônomo. Teste 7 dias grátis, sem cartão.
+2. Cansou de mandar foto pro grupo de WhatsApp esperando alguém palpitar? O Rumo Pragas usa IA treinada com imagens reais de lavouras brasileiras para dar uma resposta objetiva na hora. Laudo em PDF pra enviar ao seu agrônomo. Teste 7 dias grátis, sem cartão.
 
 3. Soja, milho, algodão, café, cana, feijão e mais de 30 culturas suportadas. Tira uma foto, recebe o diagnóstico, compartilha com quem decide. Simples. Em português do campo. 7 dias grátis. App é ferramenta auxiliar, não substitui o receituário agronômico (Lei 7.802/89).
 
@@ -66,11 +66,11 @@
 3. Você na frente da praga, não atrás.
 
 ### Primary Texts
-1. Identificar cedo é diferente de identificar tarde. O Rumo Praga acelera a triagem: foto, diagnóstico indicativo da IA e recomendação técnica em segundos — para você agir antes que o foco cresça. 7 dias grátis. Ferramenta auxiliar; resultado depende do seu manejo e receituário agronômico.
+1. Identificar cedo é diferente de identificar tarde. O Rumo Pragas acelera a triagem: foto, diagnóstico indicativo da IA e recomendação técnica em segundos — para você agir antes que o foco cresça. 7 dias grátis. Ferramenta auxiliar; resultado depende do seu manejo e receituário agronômico.
 
-2. Antes de chamar o agrônomo, ou antes de ir até o fornecedor, você já sabe o que pode ser. Laudo em PDF pronto para compartilhar. O Rumo Praga ajuda a organizar a decisão e economizar tempo no campo. Teste grátis 7 dias. Resultados variam.
+2. Antes de chamar o agrônomo, ou antes de ir até o fornecedor, você já sabe o que pode ser. Laudo em PDF pronto para compartilhar. O Rumo Pragas ajuda a organizar a decisão e economizar tempo no campo. Teste grátis 7 dias. Resultados variam.
 
-3. Quanto vale descobrir uma praga 3 dias antes? No Rumo Praga o diagnóstico sai em segundos, a partir de uma foto do celular — e fica salvo no histórico pra comparar ao longo da safra. 7 dias grátis, sem cartão. O app é auxiliar e não substitui o receituário agronômico.
+3. Quanto vale descobrir uma praga 3 dias antes? No Rumo Pragas o diagnóstico sai em segundos, a partir de uma foto do celular — e fica salvo no histórico pra comparar ao longo da safra. 7 dias grátis, sem cartão. O app é auxiliar e não substitui o receituário agronômico.
 
 ### Descriptions
 1. Trial 7 dias. R$49,90/mês.

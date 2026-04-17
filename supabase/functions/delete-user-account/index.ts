@@ -24,19 +24,30 @@ const REVENUECAT_SECRET_KEY = Deno.env.get("REVENUECAT_SECRET_KEY") ?? "";
 // Order matters — children before parents to respect FK constraints.
 const USER_SCOPED_TABLES = [
   "pragas_diagnoses",
-  "diagnosis_queue",
   "analytics_events",
+  "audit_log",
+  "user_preferences",
   "subscriptions",
 ];
 
 // Storage buckets that may contain user files under a `${userId}/` prefix.
 const STORAGE_BUCKETS = ["diagnoses", "avatars"];
 
-// ── Security: CORS — never default to wildcard ──
-const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
+// ── Security: CORS — whitelist fallback instead of wildcard ──
+const DEFAULT_ALLOWED = [
+  "https://pragas.agrorumo.com",
+  "https://rumopragas.com.br",
+  "https://rumo-pragas.vercel.app",
+  "exp://localhost:19000",
+  "exp://localhost:8081",
+  "http://localhost:19006",
+  "http://localhost:8081",
+];
+const ALLOWED_ORIGINS = (() => {
+  const env = Deno.env.get("ALLOWED_ORIGINS");
+  if (!env || env.trim() === "") return DEFAULT_ALLOWED;
+  return env.split(",").map((o) => o.trim()).filter(Boolean);
+})();
 
 function getCorsHeaders(req?: Request) {
   const origin = req?.headers.get("origin") ?? "";

@@ -4,14 +4,22 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  * Edge Function: revenuecat-webhook
  *
  * Handles RevenueCat server-side webhook events for subscription lifecycle.
- * This ensures subscription state is synced even when the app is closed
- * (e.g. renewal, cancellation, billing issues, expiration).
  *
- * SETUP:
- * 1. In RevenueCat Dashboard → Project → Integrations → Webhooks
- * 2. Set URL: https://<project>.supabase.co/functions/v1/revenuecat-webhook
- * 3. Set Authorization header: Bearer <REVENUECAT_WEBHOOK_SECRET>
- * 4. Add REVENUECAT_WEBHOOK_SECRET as a Supabase secret
+ * SECURITY (#14): RevenueCat webhooks use Bearer token authentication
+ * (NOT HMAC — as of 2026, RC does not natively support HMAC signatures for webhooks,
+ * only a shared Authorization header). We apply the following compensating controls:
+ *
+ *   1. HTTPS-only (TLS protects payload integrity in transit)
+ *   2. Constant-time token comparison (timingSafeEqual) prevents timing attacks
+ *   3. Rate limiting per-caller (100 req/min max) caps brute-force damage
+ *   4. Idempotency via in-memory event dedup prevents replay attacks on retries
+ *   5. UUID format validation on app_user_id prevents injection downstream
+ *   6. Strict event-type allowlist (SUBSCRIPTION_EVENTS) ignores unknown types
+ *   7. REVENUECAT_WEBHOOK_SECRET rotation policy: ROTATE MONTHLY (see RATE_LIMITS.md)
+ *
+ * If/when RevenueCat adds native HMAC signing, migrate by verifying
+ * X-RevenueCat-Signature header against body HMAC-SHA256.
+ * Docs: https://www.revenuecat.com/docs/integrations/webhooks
  */
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -20,15 +28,28 @@ const SUPABASE_SERVICE_ROLE_KEY =
 const REVENUECAT_WEBHOOK_SECRET =
   Deno.env.get("REVENUECAT_WEBHOOK_SECRET") ?? "";
 
-const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "*").split(",");
+// ── Security: CORS — whitelist fallback instead of wildcard ──
+// Webhooks from RevenueCat are server-to-server so CORS origin is less relevant,
+// but we keep a fallback whitelist to handle any dashboard/testing scenarios.
+const DEFAULT_ALLOWED = [
+  "https://pragas.agrorumo.com",
+  "https://rumopragas.com.br",
+  "https://app.revenuecat.com",
+];
+const ALLOWED_ORIGINS = (() => {
+  const env = Deno.env.get("ALLOWED_ORIGINS");
+  if (!env || env.trim() === "") return DEFAULT_ALLOWED;
+  return env.split(",").map((o) => o.trim()).filter(Boolean);
+})();
 
 function getCorsHeaders(req?: Request) {
   const origin = req?.headers.get("origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes("*")
-    ? "*"
-    : ALLOWED_ORIGINS.includes(origin)
-      ? origin
-      : (ALLOWED_ORIGINS[0] ?? "");
+  const allowedOrigin =
+    ALLOWED_ORIGINS.length === 0
+      ? ""
+      : ALLOWED_ORIGINS.includes(origin)
+        ? origin
+        : "";
 
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
@@ -36,6 +57,47 @@ function getCorsHeaders(req?: Request) {
       "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
+}
+
+// ── Security: Request ID ──
+function generateRequestId(): string {
+  return crypto.randomUUID();
+}
+
+// ── Structured logging (#12) ──
+function logJson(fn: string, requestId: string, level: string, message: string, context?: Record<string, unknown>) {
+  const entry = JSON.stringify({ function: fn, requestId, level, message, ts: new Date().toISOString(), ...context });
+  if (level === "ERROR" || level === "FATAL" || level === "WARN") {
+    console.error(entry);
+  } else {
+    console.log(entry);
+  }
+}
+
+// ── Security: Constant-time string comparison ──
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
+// ── Rate limiting: in-memory for webhooks (#2) ──
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 100; // 100 req/min for webhooks
+
+function checkWebhookRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT_MAX;
 }
 
 // Map RevenueCat event types to subscription status
@@ -76,17 +138,11 @@ interface RevenueCatWebhookPayload {
   event: RevenueCatEvent;
 }
 
-/**
- * Derive plan from entitlement_ids or product_id.
- * Adjust these mappings to match your RevenueCat configuration.
- */
 function derivePlan(event: RevenueCatEvent): string {
   const entitlements = event.entitlement_ids ?? [];
-
   if (entitlements.includes("enterprise")) return "enterprise";
   if (entitlements.includes("pro")) return "pro";
 
-  // Fallback: check product_id patterns
   const productId = (event.product_id ?? "").toLowerCase();
   if (productId.includes("enterprise")) return "enterprise";
   if (productId.includes("pro")) return "pro";
@@ -94,9 +150,6 @@ function derivePlan(event: RevenueCatEvent): string {
   return "free";
 }
 
-/**
- * Derive subscription status from event type.
- */
 function deriveStatus(eventType: RevenueCatEventType): string {
   switch (eventType) {
     case "INITIAL_PURCHASE":
@@ -118,9 +171,6 @@ function deriveStatus(eventType: RevenueCatEventType): string {
   }
 }
 
-/**
- * Map RevenueCat store to provider string.
- */
 function deriveProvider(store: string): string {
   switch (store) {
     case "APP_STORE":
@@ -136,13 +186,12 @@ function deriveProvider(store: string): string {
   }
 }
 
-// Simple in-memory idempotency (prevents duplicate processing on retries)
+// Simple in-memory idempotency
 const processedEvents = new Map<string, number>();
 const MAX_EVENTS = 500;
-const EVENT_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const EVENT_TTL_MS = 15 * 60 * 1000;
 
 function deduplicateEvent(eventKey: string): boolean {
-  // Cleanup old entries
   if (processedEvents.size > MAX_EVENTS) {
     const now = Date.now();
     for (const [id, ts] of processedEvents) {
@@ -154,53 +203,120 @@ function deduplicateEvent(eventKey: string): boolean {
   return false;
 }
 
+// ── Security: Valid subscription event types we process ──
+const SUBSCRIPTION_EVENTS = new Set<RevenueCatEventType>([
+  "INITIAL_PURCHASE",
+  "RENEWAL",
+  "PRODUCT_CHANGE",
+  "CANCELLATION",
+  "UNCANCELLATION",
+  "BILLING_ISSUE",
+  "SUBSCRIPTION_PAUSED",
+  "EXPIRATION",
+  "NON_RENEWING_PURCHASE",
+]);
+
 Deno.serve(async (req: Request) => {
+  const requestId = generateRequestId();
   const corsHeaders = getCorsHeaders(req);
 
+  // ── Structured request metadata logging (#10) ──
+  logJson("revenuecat-webhook", requestId, "INFO", "Request received", {
+    method: req.method,
+    origin: req.headers.get("origin") ?? "none",
+  });
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", {
+      headers: {
+        ...corsHeaders,
+        "Access-Control-Max-Age": "86400", // (#4) Cache preflight for 24h
+      },
+    });
   }
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Method not allowed", requestId }),
+      {
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
-  // Verify webhook authorization (mandatory)
+  // ── Rate limiting for webhooks (#2) ──
+  // Use IP-based or auth-header-based key for rate limiting
+  const authHeaderForRl = req.headers.get("Authorization") ?? "unknown";
+  const rlKey = authHeaderForRl.slice(0, 32);
+  if (!checkWebhookRateLimit(rlKey)) {
+    logJson("revenuecat-webhook", requestId, "WARN", "Rate limit exceeded for webhook caller");
+    return new Response(
+      JSON.stringify({ error: "Too many requests", requestId }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+      },
+    );
+  }
+
+  // ── Security: Verify webhook authorization (mandatory) ──
   if (!REVENUECAT_WEBHOOK_SECRET) {
-    console.error("[revenuecat-webhook] REVENUECAT_WEBHOOK_SECRET not configured");
-    return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    logJson("revenuecat-webhook", requestId, "ERROR", "Secret not configured");
+    return new Response(
+      JSON.stringify({ error: "Webhook secret not configured", requestId }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   const authHeader = req.headers.get("Authorization") ?? "";
   const expected = `Bearer ${REVENUECAT_WEBHOOK_SECRET}`;
-  if (authHeader !== expected) {
-    console.error("[revenuecat-webhook] Invalid authorization");
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+
+  // ── Security: Constant-time comparison to prevent timing attacks ──
+  // See file header for HMAC discussion (#14) and compensating controls.
+  if (authHeader.length !== expected.length || !timingSafeEqual(authHeader, expected)) {
+    logJson("revenuecat-webhook", requestId, "ERROR", "Invalid authorization");
+    return new Response(
+      JSON.stringify({ error: "Unauthorized", requestId }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   let payload: RevenueCatWebhookPayload;
   try {
     payload = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Invalid JSON", requestId }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   const event = payload.event;
   if (!event || !event.type || !event.app_user_id) {
     return new Response(
-      JSON.stringify({ error: "Missing event data" }),
+      JSON.stringify({ error: "Missing event data", requestId }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  // ── Security: Validate app_user_id is a UUID ──
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_REGEX.test(event.app_user_id)) {
+    return new Response(
+      JSON.stringify({ error: "Invalid user ID format", requestId }),
       {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -212,7 +328,7 @@ Deno.serve(async (req: Request) => {
   const eventKey = `${event.app_user_id}_${event.type}_${event.purchased_at_ms}`;
   if (deduplicateEvent(eventKey)) {
     return new Response(
-      JSON.stringify({ received: true, deduplicated: true }),
+      JSON.stringify({ received: true, deduplicated: true, requestId }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -220,25 +336,11 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Skip non-subscription events (e.g. SUBSCRIBER_ALIAS, TRANSFER)
-  const subscriptionEvents: RevenueCatEventType[] = [
-    "INITIAL_PURCHASE",
-    "RENEWAL",
-    "PRODUCT_CHANGE",
-    "CANCELLATION",
-    "UNCANCELLATION",
-    "BILLING_ISSUE",
-    "SUBSCRIPTION_PAUSED",
-    "EXPIRATION",
-    "NON_RENEWING_PURCHASE",
-  ];
-
-  if (!subscriptionEvents.includes(event.type)) {
-    console.log(
-      `[revenuecat-webhook] Skipping event type: ${event.type}`,
-    );
+  // Skip non-subscription events
+  if (!SUBSCRIPTION_EVENTS.has(event.type)) {
+    logJson("revenuecat-webhook", requestId, "INFO", "Skipping non-subscription event", { eventType: event.type });
     return new Response(
-      JSON.stringify({ received: true, skipped: true }),
+      JSON.stringify({ received: true, skipped: true, requestId }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -261,7 +363,11 @@ Deno.serve(async (req: Request) => {
       ? new Date(event.expiration_at_ms).toISOString()
       : null;
 
-    // Upsert subscription record
+    // ── Security: Sanitize product_id before storing ──
+    const safeProductId = (event.product_id ?? "")
+      .replace(/[^a-zA-Z0-9_.\-:]/g, "")
+      .slice(0, 255);
+
     const { error: upsertError } = await supabase
       .from("subscriptions")
       .upsert(
@@ -273,19 +379,16 @@ Deno.serve(async (req: Request) => {
           current_period_start: periodStart,
           current_period_end: periodEnd,
           updated_at: new Date().toISOString(),
-          revenuecat_product_id: event.product_id,
+          revenuecat_product_id: safeProductId,
           revenuecat_environment: event.environment,
         },
         { onConflict: "user_id" },
       );
 
     if (upsertError) {
-      console.error(
-        `[revenuecat-webhook] Failed to upsert subscription for ${userId}:`,
-        upsertError,
-      );
+      logJson("revenuecat-webhook", requestId, "ERROR", "Upsert error", { userId, error: upsertError.message });
       return new Response(
-        JSON.stringify({ error: "Failed to update subscription" }),
+        JSON.stringify({ error: "Failed to update subscription", requestId }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -293,17 +396,17 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log(
-      `[revenuecat-webhook] ${event.type} for ${userId}: plan=${plan}, status=${status}, provider=${provider}`,
-    );
+    logJson("revenuecat-webhook", requestId, "INFO", "Event processed", {
+      eventType: event.type,
+      plan,
+      status,
+    });
 
     return new Response(
       JSON.stringify({
         received: true,
         processed: true,
-        userId,
-        plan,
-        status,
+        requestId,
       }),
       {
         status: 200,
@@ -311,9 +414,9 @@ Deno.serve(async (req: Request) => {
       },
     );
   } catch (err) {
-    console.error("[revenuecat-webhook] Unexpected error:", err);
+    logJson("revenuecat-webhook", requestId, "ERROR", "Unexpected error", { error: String(err) });
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: "Internal server error", requestId }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

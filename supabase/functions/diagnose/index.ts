@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CLAUDE_API_KEY = Deno.env.get("CLAUDE_API_KEY") ?? "";
@@ -13,11 +12,22 @@ if (!CLAUDE_API_KEY) {
   console.error(JSON.stringify({ function: "diagnose", level: "FATAL", message: "CLAUDE_API_KEY not set. Function will reject all requests." }));
 }
 
-// ── Security: CORS — never default to wildcard ──
-const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
+// ── Security: CORS — whitelist fallback instead of wildcard ──
+// If ALLOWED_ORIGINS env is not configured, fall back to known-safe origins.
+const DEFAULT_ALLOWED = [
+  "https://pragas.agrorumo.com",
+  "https://rumopragas.com.br",
+  "https://rumo-pragas.vercel.app",
+  "exp://localhost:19000",
+  "exp://localhost:8081",
+  "http://localhost:19006",
+  "http://localhost:8081",
+];
+const ALLOWED_ORIGINS = (() => {
+  const env = Deno.env.get("ALLOWED_ORIGINS");
+  if (!env || env.trim() === "") return DEFAULT_ALLOWED;
+  return env.split(",").map((o) => o.trim()).filter(Boolean);
+})();
 
 function getCorsHeaders(req?: Request) {
   const origin = req?.headers.get("origin") ?? "";
@@ -61,31 +71,49 @@ function sanitizeHtml(str: string): string {
     .replace(/'/g, "&#x27;");
 }
 
-// ── Rate limiting: in-memory counter (resets on cold start) ──
+// ── Rate limiting: in-memory counter (resets on cold start) + per-plan hourly burst ──
+// Anthropic Vision is ~5-10x more expensive than text — tighter burst limits.
+// Monthly caps are enforced separately via PLAN_LIMITS + pragas_diagnoses count.
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RATE_LIMIT_MAX_ENTRIES = 10_000; // LRU eviction cap
 
-function checkRateLimit(userId: string): { allowed: boolean; remaining: number; resetAt: number } {
+// Per-hour diagnosis burst limits by plan (protects Anthropic Vision spend).
+const RATE_LIMIT_BY_PLAN: Record<string, number> = {
+  free: 10,         // 10 diag/hour — covers burst while free monthly cap is 3
+  pro: 100,         // 100 diag/hour — power users
+  enterprise: 10_000, // effectively unlimited (still bounded for abuse detection)
+};
+
+function checkRateLimit(userId: string, limit: number): { allowed: boolean; remaining: number; resetAt: number } {
   const now = Date.now();
+
+  // LRU eviction: drop expired entries if map grows
+  if (rateLimitMap.size > RATE_LIMIT_MAX_ENTRIES) {
+    for (const [k, v] of rateLimitMap) {
+      if (v.resetAt < now) rateLimitMap.delete(k);
+      if (rateLimitMap.size <= RATE_LIMIT_MAX_ENTRIES * 0.9) break;
+    }
+  }
+
   const entry = rateLimitMap.get(userId);
   if (!entry || now > entry.resetAt) {
     const resetAt = now + RATE_LIMIT_WINDOW_MS;
     rateLimitMap.set(userId, { count: 1, resetAt });
-    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1, resetAt };
+    return { allowed: true, remaining: limit - 1, resetAt };
   }
   entry.count++;
   return {
-    allowed: entry.count <= RATE_LIMIT_MAX_REQUESTS,
-    remaining: Math.max(0, RATE_LIMIT_MAX_REQUESTS - entry.count),
+    allowed: entry.count <= limit,
+    remaining: Math.max(0, limit - entry.count),
     resetAt: entry.resetAt,
   };
 }
 
 // ── Rate limit headers helper (#3) ──
-function rateLimitHeaders(remaining: number, resetAt: number): Record<string, string> {
+function rateLimitHeaders(limit: number, remaining: number, resetAt: number): Record<string, string> {
   return {
-    "X-RateLimit-Limit": String(RATE_LIMIT_MAX_REQUESTS),
+    "X-RateLimit-Limit": String(limit),
     "X-RateLimit-Remaining": String(remaining),
     "X-RateLimit-Reset": String(Math.ceil(resetAt / 1000)),
   };
@@ -222,7 +250,7 @@ interface DiagnosisRequest {
   longitude: number | null;
 }
 
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
   const requestId = generateRequestId();
   const corsHeaders = getCorsHeaders(req);
 
@@ -289,29 +317,7 @@ serve(async (req: Request) => {
     );
   }
 
-  // ── Rate limiting with headers (#3) ──
-  const rl = checkRateLimit(user.id);
-  const rlHeaders = rateLimitHeaders(rl.remaining, rl.resetAt);
-
-  if (!rl.allowed) {
-    return new Response(
-      JSON.stringify({
-        error: "Muitas requisicoes. Aguarde um momento.",
-        requestId,
-      }),
-      {
-        status: 429,
-        headers: {
-          ...corsHeaders,
-          ...rlHeaders,
-          "Content-Type": "application/json",
-          "Retry-After": "60",
-        },
-      },
-    );
-  }
-
-  // ── Subscription enforcement ──
+  // ── Subscription lookup (needed for per-plan rate limit) ──
   const PLAN_LIMITS: Record<string, number> = {
     free: 3,
     pro: 30,
@@ -327,6 +333,30 @@ serve(async (req: Request) => {
   const plan =
     (subscription?.status === "active" && subscription?.plan) || "free";
   const limit = PLAN_LIMITS[plan] ?? 3;
+  const perHourLimit = RATE_LIMIT_BY_PLAN[plan] ?? RATE_LIMIT_BY_PLAN.free;
+
+  // ── Rate limiting with headers (#3) — per-plan hourly burst ──
+  const rl = checkRateLimit(user.id, perHourLimit);
+  const rlHeaders = rateLimitHeaders(perHourLimit, rl.remaining, rl.resetAt);
+
+  if (!rl.allowed) {
+    logJson("diagnose", requestId, "WARN", "Rate limit exceeded", { userId: user.id, plan, limit: perHourLimit });
+    return new Response(
+      JSON.stringify({
+        error: "Muitas requisicoes. Aguarde um momento.",
+        requestId,
+      }),
+      {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          ...rlHeaders,
+          "Content-Type": "application/json",
+          "Retry-After": "3600",
+        },
+      },
+    );
+  }
 
   if (limit !== -1) {
     const now = new Date();

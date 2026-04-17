@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
@@ -6,13 +5,78 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+// ── Security: Environment check for livemode enforcement (#13) ──
+const IS_PRODUCTION = (Deno.env.get("ENVIRONMENT") ?? Deno.env.get("DENO_ENV") ?? "production").toLowerCase() === "production";
+
+// ── Security: CORS — whitelist fallback (server-to-server webhook) ──
+const DEFAULT_ALLOWED = [
+  "https://pragas.agrorumo.com",
+  "https://rumopragas.com.br",
+  "https://dashboard.stripe.com",
+];
+const ALLOWED_ORIGINS = (() => {
+  const env = Deno.env.get("ALLOWED_ORIGINS");
+  if (!env || env.trim() === "") return DEFAULT_ALLOWED;
+  return env.split(",").map((o) => o.trim()).filter(Boolean);
+})();
+
+function getCorsHeaders(req?: Request) {
+  const origin = req?.headers.get("origin") ?? "";
+  const allowedOrigin =
+    ALLOWED_ORIGINS.length === 0
+      ? ""
+      : ALLOWED_ORIGINS.includes(origin)
+        ? origin
+        : "";
+
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, stripe-signature",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
+
+// ── Security: Request ID ──
+function generateRequestId(): string {
+  return crypto.randomUUID();
+}
+
+// ── Structured logging (#12) ──
+function logJson(fn: string, requestId: string, level: string, message: string, context?: Record<string, unknown>) {
+  const entry = JSON.stringify({ function: fn, requestId, level, message, ts: new Date().toISOString(), ...context });
+  if (level === "ERROR" || level === "FATAL" || level === "WARN") {
+    console.error(entry);
+  } else {
+    console.log(entry);
+  }
+}
+
+// ── Rate limiting: in-memory for webhooks (#1) ──
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 100; // 100 req/min for webhooks
+
+function checkWebhookRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT_MAX;
+}
+
+// ── UUID validation regex (#7) ──
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Simple in-memory idempotency check (prevents duplicate processing on retries)
 const processedEvents = new Map<string, number>();
 const MAX_PROCESSED_EVENTS = 1000;
 const EVENT_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 function isEventProcessed(eventId: string): boolean {
-  // Clean up old entries periodically
   if (processedEvents.size > MAX_PROCESSED_EVENTS) {
     const now = Date.now();
     for (const [id, timestamp] of processedEvents) {
@@ -87,30 +151,50 @@ async function verifyStripeSignature(
   return mismatch === 0;
 }
 
-const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "*").split(",");
+// ── Security: Typed Stripe event (no `any`) ──
+interface StripeEventObject {
+  customer?: string;
+  subscription?: string;
+  metadata?: Record<string, string>;
+  status?: string;
+  current_period_start?: number;
+  current_period_end?: number;
+}
 
-function getCorsHeaders(req?: Request) {
-  const origin = req?.headers.get("origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes("*")
-    ? "*"
-    : ALLOWED_ORIGINS.includes(origin)
-      ? origin
-      : (ALLOWED_ORIGINS[0] ?? "");
-
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, stripe-signature",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+interface StripeEvent {
+  id: string;
+  type: string;
+  livemode: boolean;
+  data: {
+    object: StripeEventObject;
   };
 }
 
-serve(async (req: Request) => {
+// ── Security: Valid Stripe event types we handle ──
+const HANDLED_EVENT_TYPES = new Set([
+  "checkout.session.completed",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+  "invoice.payment_failed",
+]);
+
+Deno.serve(async (req: Request) => {
+  const requestId = generateRequestId();
   const corsHeaders = getCorsHeaders(req);
 
-  // Handle CORS preflight
+  // ── Structured request metadata logging (#10) ──
+  logJson("stripe-webhook", requestId, "INFO", "Request received", {
+    method: req.method,
+    origin: req.headers.get("origin") ?? "none",
+  });
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", {
+      headers: {
+        ...corsHeaders,
+        "Access-Control-Max-Age": "86400", // (#4) Cache preflight for 24h
+      },
+    });
   }
 
   if (req.method !== "POST") {
@@ -120,13 +204,28 @@ serve(async (req: Request) => {
     });
   }
 
+  // ── Rate limiting for webhooks (#1) ──
+  // Use a hash of the first 16 chars of the signature as rate limit key
+  const sigHeader = req.headers.get("stripe-signature") ?? "";
+  const rlKey = sigHeader ? sigHeader.slice(0, 32) : "unknown";
+  if (!checkWebhookRateLimit(rlKey)) {
+    logJson("stripe-webhook", requestId, "WARN", "Rate limit exceeded for webhook caller");
+    return new Response(
+      JSON.stringify({ error: "Too many requests", requestId }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+      },
+    );
+  }
+
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
 
   // Verify webhook signature
   if (!signature || !STRIPE_WEBHOOK_SECRET) {
     return new Response(
-      JSON.stringify({ error: "Missing signature or webhook secret" }),
+      JSON.stringify({ error: "Missing signature or webhook secret", requestId }),
       {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -140,23 +239,60 @@ serve(async (req: Request) => {
     STRIPE_WEBHOOK_SECRET,
   );
   if (!isValid) {
-    return new Response(JSON.stringify({ error: "Invalid signature" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Invalid signature", requestId }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
-  let event: any;
+  let event: StripeEvent;
   try {
     event = JSON.parse(body);
   } catch {
-    return new Response("Invalid JSON", { status: 400, headers: corsHeaders });
+    return new Response(
+      JSON.stringify({ error: "Invalid JSON", requestId }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 
-  // Idempotency: skip already-processed events (Stripe retries)
-  if (event.id && isEventProcessed(event.id)) {
+  // ── Validate event structure ──
+  if (!event.id || typeof event.id !== "string" || !event.type || !event.data?.object) {
     return new Response(
-      JSON.stringify({ received: true, deduplicated: true }),
+      JSON.stringify({ error: "Invalid event structure", requestId }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
+  // ── Security: Reject test/sandbox events in production (#13) ──
+  if (IS_PRODUCTION && event.livemode === false) {
+    logJson("stripe-webhook", requestId, "WARN", "Rejected sandbox event in production", { eventId: event.id, eventType: event.type });
+    return new Response(
+      JSON.stringify({ error: "Test events not accepted in production", requestId }),
+      {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  // Idempotency: skip already-processed events
+  if (isEventProcessed(event.id)) {
+    return new Response(
+      JSON.stringify({ received: true, deduplicated: true, requestId }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  // Skip unhandled event types
+  if (!HANDLED_EVENT_TYPES.has(event.type)) {
+    return new Response(
+      JSON.stringify({ received: true, skipped: true, requestId }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -172,6 +308,12 @@ serve(async (req: Request) => {
         const session = event.data.object;
         const userId = session.metadata?.user_id;
         const plan = session.metadata?.plan || "pro";
+
+        // ── Security: Validate user_id is UUID format (#7) ──
+        if (userId && !UUID_REGEX.test(userId)) {
+          logJson("stripe-webhook", requestId, "WARN", "Invalid user_id format in checkout metadata", { userId });
+          break;
+        }
 
         if (userId) {
           await supabase.from("subscriptions").upsert(
@@ -205,17 +347,21 @@ serve(async (req: Request) => {
                 ? "past_due"
                 : "canceled";
 
+        const updateData: Record<string, unknown> = { status };
+        if (subscription.current_period_start) {
+          updateData.current_period_start = new Date(
+            subscription.current_period_start * 1000,
+          ).toISOString();
+        }
+        if (subscription.current_period_end) {
+          updateData.current_period_end = new Date(
+            subscription.current_period_end * 1000,
+          ).toISOString();
+        }
+
         await supabase
           .from("subscriptions")
-          .update({
-            status,
-            current_period_start: new Date(
-              subscription.current_period_start * 1000,
-            ).toISOString(),
-            current_period_end: new Date(
-              subscription.current_period_end * 1000,
-            ).toISOString(),
-          })
+          .update(updateData)
           .eq("stripe_customer_id", customerId);
         break;
       }
@@ -239,17 +385,26 @@ serve(async (req: Request) => {
       }
     }
 
-    // Mark event as processed to prevent duplicate handling
-    if (event.id) markEventProcessed(event.id);
+    markEventProcessed(event.id);
 
-    return new Response(JSON.stringify({ received: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    logJson("stripe-webhook", requestId, "INFO", "Event processed", { eventType: event.type, eventId: event.id });
+
+    return new Response(
+      JSON.stringify({ received: true, requestId }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (error) {
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    // Never leak internal error details to client
+    logJson("stripe-webhook", requestId, "ERROR", "Processing error", { error: String(error) });
+    return new Response(
+      JSON.stringify({ error: "Internal processing error", requestId }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });
