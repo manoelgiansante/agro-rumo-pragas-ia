@@ -27,7 +27,7 @@ export async function initializePurchases(userId?: string): Promise<void> {
   const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
 
   if (!apiKey) {
-    console.warn('[RevenueCat] API key not configured -- skipping initialisation');
+    if (__DEV__) console.warn('[RevenueCat] API key not configured -- skipping initialisation');
     return;
   }
 
@@ -43,7 +43,7 @@ export async function identifyUser(userId: string): Promise<void> {
   try {
     await Purchases.logIn(userId);
   } catch (e) {
-    console.error('[RevenueCat] Failed to identify user:', e);
+    if (__DEV__) console.error('[RevenueCat] Failed to identify user:', e);
   }
 }
 
@@ -58,7 +58,7 @@ export async function getOfferings(): Promise<PurchasesPackage[]> {
     }
     return [];
   } catch (e) {
-    console.error('[RevenueCat] Failed to get offerings:', e);
+    if (__DEV__) console.error('[RevenueCat] Failed to get offerings:', e);
     return [];
   }
 }
@@ -72,8 +72,12 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<CustomerIn
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     return customerInfo;
-  } catch (e: any) {
-    if (e.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+  } catch (e: unknown) {
+    if (
+      e instanceof Object &&
+      'code' in e &&
+      (e as { code: string }).code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR
+    ) {
       return null; // user cancelled -- not an error
     }
     throw e;
@@ -100,7 +104,7 @@ export async function checkSubscriptionStatus(): Promise<{
     }
     return { plan: 'free', isActive: false };
   } catch (e) {
-    console.error('[RevenueCat] Failed to check subscription status:', e);
+    if (__DEV__) console.error('[RevenueCat] Failed to check subscription status:', e);
     return {
       plan: 'free',
       isActive: false,
@@ -117,7 +121,7 @@ export async function restorePurchases(): Promise<CustomerInfo | null> {
     const customerInfo = await Purchases.restorePurchases();
     return customerInfo;
   } catch (e) {
-    console.error('[RevenueCat] Failed to restore purchases:', e);
+    if (__DEV__) console.error('[RevenueCat] Failed to restore purchases:', e);
     throw new Error(i18n.t('errors.restorePurchasesFailed'), { cause: e });
   }
 }

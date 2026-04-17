@@ -75,7 +75,6 @@ export default function PaywallScreen() {
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
 
-  const plan = PLANS.find((p) => p.id === selected)!;
   const configured = isRevenueCatConfigured();
 
   /**
@@ -88,21 +87,33 @@ export default function PaywallScreen() {
     return null;
   }
 
+  // Store real prices from RevenueCat
+  const [realPrices, setRealPrices] = useState<Record<string, string>>({});
+
   // Fetch RevenueCat offerings on mount
   useEffect(() => {
     if (!configured) return;
     getOfferings().then((pkgs) => {
       setPackages(pkgs);
-      // Override local prices with real store prices when available
+      // Collect real store prices (without mutating PLANS)
+      const prices: Record<string, string> = {};
       pkgs.forEach((pkg) => {
         const planId = mapPackageToPlan(pkg);
-        const match = PLANS.find((p) => p.id === planId);
-        if (match) {
-          match.price = pkg.product.priceString;
+        if (planId) {
+          prices[planId] = pkg.product.priceString;
         }
       });
+      setRealPrices(prices);
     });
-  }, [configured, PLANS]);
+  }, [configured]);
+
+  // Merge real prices with plan definitions (immutable)
+  const plansWithPrices = useMemo(
+    () => PLANS.map((p) => (realPrices[p.id] ? { ...p, price: realPrices[p.id] } : p)),
+    [PLANS, realPrices],
+  );
+
+  const plan = plansWithPrices.find((p) => p.id === selected)!;
 
   const findPackageForPlan = useCallback(
     (planId: string): PurchasesPackage | undefined => {
@@ -143,8 +154,9 @@ export default function PaywallScreen() {
         ]);
       }
       // customerInfo === null means user cancelled -- do nothing
-    } catch (e: any) {
-      Alert.alert(t('paywall.purchaseError'), e?.message || t('paywall.purchaseErrorMsg'));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('paywall.purchaseErrorMsg');
+      Alert.alert(t('paywall.purchaseError'), message);
     } finally {
       setPurchasing(false);
     }
@@ -177,7 +189,7 @@ export default function PaywallScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <LinearGradient colors={Gradients.hero as any} style={styles.header}>
+        <LinearGradient colors={Gradients.hero} style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.closeBtn}
@@ -192,7 +204,7 @@ export default function PaywallScreen() {
         </LinearGradient>
 
         <View style={styles.plans}>
-          {PLANS.map((p) => (
+          {plansWithPrices.map((p) => (
             <TouchableOpacity
               key={p.id}
               style={[styles.planCard, selected === p.id && styles.planCardSelected]}
@@ -215,7 +227,9 @@ export default function PaywallScreen() {
               {p.popular && (
                 <View style={styles.popularBadge}>
                   <Ionicons name="star" size={8} color="#FFF" />
-                  <Text style={styles.popularText}>{t('paywall.popular')}</Text>
+                  <Text style={styles.popularText} maxFontSizeMultiplier={1.2}>
+                    {t('paywall.popular')}
+                  </Text>
                 </View>
               )}
               <Text style={[styles.planName, selected === p.id && styles.planNameSelected]}>
@@ -258,17 +272,13 @@ export default function PaywallScreen() {
           accessibilityState={{ disabled: purchasing, busy: purchasing }}
         >
           <LinearGradient
-            colors={
-              selected === 'free'
-                ? [Colors.systemGray4, Colors.systemGray3]
-                : (Gradients.hero as any)
-            }
+            colors={selected === 'free' ? [Colors.systemGray4, Colors.systemGray3] : Gradients.hero}
             style={styles.subscribeBtn}
           >
             {purchasing ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.subscribeBtnText}>
+              <Text style={styles.subscribeBtnText} maxFontSizeMultiplier={1.2}>
                 {selected === 'free'
                   ? t('paywall.continueFree')
                   : `${t('paywall.subscribe')} ${plan.price}`}

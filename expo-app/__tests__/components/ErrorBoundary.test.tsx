@@ -4,6 +4,11 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import i18n from '../../i18n';
 
+const mockCaptureException = jest.fn();
+jest.mock('@sentry/react-native', () => ({
+  captureException: (...args: unknown[]) => mockCaptureException(...args),
+}));
+
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: 'Ionicons',
 }));
@@ -89,5 +94,35 @@ describe('ErrorBoundary', () => {
     );
     expect(getByText('Custom fallback')).toBeTruthy();
     expect(queryByText(errorTitle)).toBeNull();
+  });
+
+  it('reports error to Sentry via componentDidCatch', () => {
+    render(
+      <ErrorBoundary>
+        <ThrowingChild shouldThrow={true} />
+      </ErrorBoundary>,
+    );
+
+    expect(mockCaptureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        contexts: expect.objectContaining({
+          react: expect.objectContaining({
+            componentStack: expect.any(String),
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('does not call Sentry when no error occurs', () => {
+    mockCaptureException.mockClear();
+    render(
+      <ErrorBoundary>
+        <ThrowingChild shouldThrow={false} />
+      </ErrorBoundary>,
+    );
+
+    expect(mockCaptureException).not.toHaveBeenCalled();
   });
 });

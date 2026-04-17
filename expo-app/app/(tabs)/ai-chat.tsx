@@ -88,14 +88,19 @@ export default function AIChatScreen() {
 
   // Load chat history from AsyncStorage on mount
   useEffect(() => {
+    let mounted = true;
     setIsLoadingHistory(true);
     loadChatHistory().then((history) => {
+      if (!mounted) return;
       if (history.length > 0) {
         setMessages(history);
       }
       hasLoadedHistory.current = true;
       setIsLoadingHistory(false);
     });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Persist messages to AsyncStorage after each change
@@ -128,9 +133,11 @@ export default function AIChatScreen() {
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiMsg]);
-      } catch (err: any) {
+      } catch (err: unknown) {
         // If chat limit reached, show upgrade prompt
-        if (err?.code === 'CHAT_LIMIT_REACHED') {
+        const errCode =
+          err instanceof Object && 'code' in err ? (err as { code: string }).code : undefined;
+        if (errCode === 'CHAT_LIMIT_REACHED') {
           Alert.alert(t('chat.limitReachedTitle'), t('chat.limitReachedMessage'), [
             { text: t('common.cancel'), style: 'cancel' },
             { text: t('chat.upgradePlan'), onPress: () => router.push('/paywall') },
@@ -140,7 +147,7 @@ export default function AIChatScreen() {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content:
-            err?.code === 'CHAT_LIMIT_REACHED'
+            errCode === 'CHAT_LIMIT_REACHED'
               ? t('chat.limitReachedMessage')
               : t('chat.errorMessage'),
           timestamp: new Date(),
@@ -167,7 +174,9 @@ export default function AIChatScreen() {
         style: 'destructive',
         onPress: () => {
           setMessages([]);
-          AsyncStorage.removeItem(CHAT_HISTORY_KEY).catch(() => {});
+          AsyncStorage.removeItem(CHAT_HISTORY_KEY).catch((err: unknown) => {
+            if (__DEV__) console.error('[Chat] Failed to clear history:', err);
+          });
         },
       },
     ]);
@@ -193,7 +202,7 @@ export default function AIChatScreen() {
             isTablet && { maxWidth: contentMaxWidth, alignSelf: 'center' as const, width: '100%' },
           ]}
         >
-          <LinearGradient colors={Gradients.tech as any} style={styles.aiAvatar}>
+          <LinearGradient colors={Gradients.tech} style={styles.aiAvatar}>
             <Ionicons name="sparkles" size={34} color="#FFF" />
           </LinearGradient>
           <Text style={[styles.aiTitle, isDark && styles.textDark]}>{t('chat.title')}</Text>
@@ -204,7 +213,7 @@ export default function AIChatScreen() {
               key={i}
               style={[styles.suggestion, isDark && styles.suggestionDark]}
               onPress={() => handleSuggestionPress(s)}
-              accessibilityLabel={`Sugestao: ${s}`}
+              accessibilityLabel={`${t('chat.suggestionA11y')}: ${s}`}
               accessibilityRole="button"
             >
               <Ionicons name="leaf" size={14} color={Colors.accent} />
@@ -247,7 +256,7 @@ export default function AIChatScreen() {
             ListFooterComponent={
               sending ? (
                 <View style={styles.typingRow}>
-                  <LinearGradient colors={Gradients.tech as any} style={styles.typingAvatar}>
+                  <LinearGradient colors={Gradients.tech} style={styles.typingAvatar}>
                     <Ionicons name="sparkles" size={13} color="#FFF" />
                   </LinearGradient>
                   <View style={styles.typingBubble}>
@@ -364,7 +373,13 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.separator,
   },
   chatHeaderTitle: { fontSize: FontSize.subheadline, fontWeight: '600' },
-  clearChatBtn: { padding: 8 },
+  clearChatBtn: {
+    padding: 8,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',

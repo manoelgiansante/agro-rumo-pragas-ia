@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 export interface AgrioPrediction {
   id: string;
   confidence: number;
@@ -19,6 +20,7 @@ export interface AgrioProduct {
 export interface AgrioEnrichment {
   name_pt?: string;
   name_es?: string;
+  scientific_name?: string;
   description?: string;
   description_es?: string;
   causes?: string[];
@@ -78,25 +80,70 @@ export interface DiagnosisResult {
 
 // --- Helpers ---
 
+export function getSeverityConfig(level: SeverityLevel): {
+  displayName: string;
+  color: string;
+  icon: string;
+} {
+  const configs: Record<SeverityLevel, { i18nKey: string; color: string; icon: string }> = {
+    critical: { i18nKey: 'severity.critical', color: '#FF3B30', icon: 'alert-triangle' },
+    high: { i18nKey: 'severity.high', color: '#FF9500', icon: 'alert-circle' },
+    medium: { i18nKey: 'severity.medium', color: '#FFCC00', icon: 'info' },
+    low: { i18nKey: 'severity.low', color: '#2E8C3E', icon: 'check-circle' },
+    none: { i18nKey: 'severity.none', color: '#8E8E93', icon: 'minus-circle' },
+  };
+  const cfg = configs[level];
+  return { displayName: i18n.t(cfg.i18nKey), color: cfg.color, icon: cfg.icon };
+}
+
+/** Set of valid severity levels for type-safe validation */
+const VALID_SEVERITY_LEVELS: ReadonlySet<string> = new Set<SeverityLevel>([
+  'critical',
+  'high',
+  'medium',
+  'low',
+  'none',
+]);
+
+/** @deprecated Use getSeverityConfig() for i18n support. Kept for backward compatibility — now delegates to i18n. */
 export const SEVERITY_CONFIG: Record<
   SeverityLevel,
   { displayName: string; color: string; icon: string }
 > = {
-  critical: { displayName: 'Critico', color: '#FF3B30', icon: 'alert-triangle' },
-  high: { displayName: 'Alto', color: '#FF9500', icon: 'alert-circle' },
-  medium: { displayName: 'Medio', color: '#FFCC00', icon: 'info' },
-  low: { displayName: 'Baixo', color: '#2E8C3E', icon: 'check-circle' },
-  none: { displayName: 'Nenhum', color: '#8E8E93', icon: 'minus-circle' },
+  critical: { displayName: i18n.t('severity.critical'), color: '#FF3B30', icon: 'alert-triangle' },
+  high: { displayName: i18n.t('severity.high'), color: '#FF9500', icon: 'alert-circle' },
+  medium: { displayName: i18n.t('severity.medium'), color: '#FFCC00', icon: 'info' },
+  low: { displayName: i18n.t('severity.low'), color: '#2E8C3E', icon: 'check-circle' },
+  none: { displayName: i18n.t('severity.none'), color: '#8E8E93', icon: 'minus-circle' },
 };
 
+export function getConfidenceLevelConfig(level: ConfidenceLevelName): {
+  displayName: string;
+  color: string;
+  percentage: string;
+} {
+  const configs: Record<
+    ConfidenceLevelName,
+    { i18nKey: string; color: string; percentage: string }
+  > = {
+    high: { i18nKey: 'confidence.high', color: '#2E8C3E', percentage: '85%+' },
+    medium: { i18nKey: 'confidence.medium', color: '#FFCC00', percentage: '60-84%' },
+    low: { i18nKey: 'confidence.low', color: '#FF9500', percentage: '40-59%' },
+    very_low: { i18nKey: 'confidence.veryLow', color: '#FF3B30', percentage: '<40%' },
+  };
+  const cfg = configs[level];
+  return { displayName: i18n.t(cfg.i18nKey), color: cfg.color, percentage: cfg.percentage };
+}
+
+/** @deprecated Use getConfidenceLevelConfig() for i18n support. Kept for backward compatibility — now delegates to i18n. */
 export const CONFIDENCE_LEVELS: Record<
   ConfidenceLevelName,
   { displayName: string; color: string; percentage: string }
 > = {
-  high: { displayName: 'Alta', color: '#2E8C3E', percentage: '85%+' },
-  medium: { displayName: 'Media', color: '#FFCC00', percentage: '60-84%' },
-  low: { displayName: 'Baixa', color: '#FF9500', percentage: '40-59%' },
-  very_low: { displayName: 'Muito Baixa', color: '#FF3B30', percentage: '<40%' },
+  high: { displayName: i18n.t('confidence.high'), color: '#2E8C3E', percentage: '85%+' },
+  medium: { displayName: i18n.t('confidence.medium'), color: '#FFCC00', percentage: '60-84%' },
+  low: { displayName: i18n.t('confidence.low'), color: '#FF9500', percentage: '40-59%' },
+  very_low: { displayName: i18n.t('confidence.veryLow'), color: '#FF3B30', percentage: '<40%' },
 };
 
 export function getConfidenceLevel(confidence?: number): ConfidenceLevelName {
@@ -109,13 +156,16 @@ export function getConfidenceLevel(confidence?: number): ConfidenceLevelName {
 
 export function getSeverityLevel(result: DiagnosisResult): SeverityLevel {
   const severity = result.parsedNotes?.enrichment?.severity;
-  if (severity && SEVERITY_CONFIG[severity]) return severity;
+  if (severity && VALID_SEVERITY_LEVELS.has(severity)) return severity;
   return 'medium';
 }
 
 export function getDisplayName(result: DiagnosisResult): string {
   return (
-    result.parsedNotes?.enrichment?.name_pt ?? result.pest_name ?? result.pest_id ?? 'Diagnostico'
+    result.parsedNotes?.enrichment?.name_pt ??
+    result.pest_name ??
+    result.pest_id ??
+    i18n.t('diagnosis.defaultName')
   );
 }
 

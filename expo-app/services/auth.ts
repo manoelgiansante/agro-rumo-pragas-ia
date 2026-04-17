@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
+import * as Sentry from '@sentry/react-native';
 
 export async function signIn(email: string, password: string) {
+  Sentry.addBreadcrumb({ category: 'auth', message: 'Sign in attempt', level: 'info' });
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -10,6 +12,7 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signUp(email: string, password: string, fullName: string) {
+  Sentry.addBreadcrumb({ category: 'auth', message: 'Sign up attempt', level: 'info' });
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -22,6 +25,7 @@ export async function signUp(email: string, password: string, fullName: string) 
 }
 
 export async function signOut() {
+  Sentry.addBreadcrumb({ category: 'auth', message: 'Sign out', level: 'info' });
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }

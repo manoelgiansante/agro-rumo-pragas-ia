@@ -27,6 +27,8 @@ export default [
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
       "no-console": ["warn", { allow: ["warn", "error"] }],
+      // React Native uses require() for static asset resolution
+      "@typescript-eslint/no-require-imports": "off",
     },
     settings: {
       react: { version: "detect" },

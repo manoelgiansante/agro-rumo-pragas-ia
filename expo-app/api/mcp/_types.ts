@@ -1,5 +1,11 @@
-export interface MCPContent { type: 'text'; text: string; }
-export interface MCPResponse { content: MCPContent[]; isError?: boolean; }
+export interface MCPContent {
+  type: 'text';
+  text: string;
+}
+export interface MCPResponse {
+  content: MCPContent[];
+  isError?: boolean;
+}
 export function ok(data: unknown): MCPResponse {
   return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
 }
@@ -13,5 +19,6 @@ export interface ToolHandler {
   handler: (input: unknown) => Promise<MCPResponse>;
 }
 export function logEvent(event: string, meta: Record<string, unknown> = {}) {
+  // eslint-disable-next-line no-console -- Structured server log (Vercel function stdout)
   console.log(JSON.stringify({ mcp: 'rumo-pragas', event, ts: new Date().toISOString(), ...meta }));
 }

@@ -2,6 +2,8 @@
  * Tests for types/diagnosis.ts helper functions
  */
 import {
+  getSeverityConfig,
+  getConfidenceLevelConfig,
   getConfidenceLevel,
   getSeverityLevel,
   getDisplayName,
@@ -98,7 +100,7 @@ describe('getDisplayName', () => {
 
   it('returns "Diagnostico" as last resort', () => {
     const result = makeDiagnosis();
-    expect(getDisplayName(result)).toBe('Diagnostico');
+    expect(getDisplayName(result)).toMatch(/Diagn[oó]stic/);
   });
 });
 
@@ -214,5 +216,65 @@ describe('CONFIDENCE_LEVELS', () => {
       expect(level).toHaveProperty('color');
       expect(level).toHaveProperty('percentage');
     }
+  });
+});
+
+describe('getSeverityConfig', () => {
+  it('returns correct config for critical severity', () => {
+    const config = getSeverityConfig('critical');
+    expect(config.color).toBe('#FF3B30');
+    expect(config.icon).toBe('alert-triangle');
+    expect(config.displayName).toBeDefined();
+  });
+
+  it('returns correct config for high severity', () => {
+    const config = getSeverityConfig('high');
+    expect(config.color).toBe('#FF9500');
+    expect(config.icon).toBe('alert-circle');
+  });
+
+  it('returns correct config for medium severity', () => {
+    const config = getSeverityConfig('medium');
+    expect(config.color).toBe('#FFCC00');
+    expect(config.icon).toBe('info');
+  });
+
+  it('returns correct config for low severity', () => {
+    const config = getSeverityConfig('low');
+    expect(config.color).toBe('#2E8C3E');
+    expect(config.icon).toBe('check-circle');
+  });
+
+  it('returns correct config for none severity', () => {
+    const config = getSeverityConfig('none');
+    expect(config.color).toBe('#8E8E93');
+    expect(config.icon).toBe('minus-circle');
+  });
+});
+
+describe('getConfidenceLevelConfig', () => {
+  it('returns correct config for high confidence', () => {
+    const config = getConfidenceLevelConfig('high');
+    expect(config.color).toBe('#2E8C3E');
+    expect(config.percentage).toBe('85%+');
+    expect(config.displayName).toBeDefined();
+  });
+
+  it('returns correct config for medium confidence', () => {
+    const config = getConfidenceLevelConfig('medium');
+    expect(config.color).toBe('#FFCC00');
+    expect(config.percentage).toBe('60-84%');
+  });
+
+  it('returns correct config for low confidence', () => {
+    const config = getConfidenceLevelConfig('low');
+    expect(config.color).toBe('#FF9500');
+    expect(config.percentage).toBe('40-59%');
+  });
+
+  it('returns correct config for very_low confidence', () => {
+    const config = getConfidenceLevelConfig('very_low');
+    expect(config.color).toBe('#FF3B30');
+    expect(config.percentage).toBe('<40%');
   });
 });

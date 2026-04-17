@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { BorderRadius, Colors, FontSize, FontWeight } from '../constants/theme';
+import type { DiagnosisResult } from '../types/diagnosis';
 
 export interface DiagnosisItem {
   id: string;
@@ -18,7 +19,7 @@ export interface DiagnosisItem {
 }
 
 interface DiagnosisCardProps {
-  diagnosis: DiagnosisItem;
+  diagnosis: DiagnosisItem | DiagnosisResult;
   compact?: boolean;
 }
 
@@ -130,7 +131,8 @@ export const DiagnosisCard = React.memo(function DiagnosisCard({
   const { t } = useTranslation();
   const severity = diagnosis.severity || parseSeverityFromNotes(diagnosis.notes);
   const severityColor = getSeverityColor(severity);
-  const isHealthy = diagnosis.is_healthy ?? diagnosis.pest_id === 'Healthy';
+  const isHealthy =
+    ('is_healthy' in diagnosis && diagnosis.is_healthy) ?? diagnosis.pest_id === 'Healthy';
   const displayName =
     parseNameFromNotes(diagnosis.notes) || diagnosis.pest_name || t('diagnosis.diagnosisLabel');
   const monthKeys = [

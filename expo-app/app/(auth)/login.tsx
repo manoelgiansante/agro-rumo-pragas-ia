@@ -123,9 +123,10 @@ export default function LoginScreen() {
         // User cancelled
         return;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(t('common.error'), err?.message || t('auth.loginError'));
+      const message = err instanceof Error ? err.message : t('auth.loginError');
+      Alert.alert(t('common.error'), message);
     } finally {
       setAppleLoading(false);
     }
@@ -153,10 +154,8 @@ export default function LoginScreen() {
               <View style={styles.iconCircle}>
                 <Ionicons name="leaf" size={40} color={Colors.white} />
               </View>
-              <Text style={styles.heroTitle}>Rumo Pragas</Text>
-              <Text style={styles.heroSubtitle}>
-                Diagn\u00f3stico inteligente de pragas agr\u00edcolas
-              </Text>
+              <Text style={styles.heroTitle}>{t('auth.appName')}</Text>
+              <Text style={styles.heroSubtitle}>{t('auth.appTagline')}</Text>
             </View>
           </LinearGradient>
 
@@ -355,7 +354,7 @@ export default function LoginScreen() {
                 {isLoading ? (
                   <ActivityIndicator color={Colors.white} />
                 ) : (
-                  <Text style={styles.submitText}>
+                  <Text style={styles.submitText} maxFontSizeMultiplier={1.2}>
                     {mode === 'login' ? t('auth.login') : t('auth.signup')}
                   </Text>
                 )}

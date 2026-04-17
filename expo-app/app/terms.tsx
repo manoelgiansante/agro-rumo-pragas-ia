@@ -2,9 +2,11 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
 
 export default function TermsScreen() {
+  const { t } = useTranslation();
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -12,10 +14,20 @@ export default function TermsScreen() {
           onPress={() => router.back()}
           style={styles.backButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('terms.backA11y')}
         >
-          <Ionicons name="chevron-back" size={24} color={Colors.accent} />
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color={Colors.accent}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Termos de Uso</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          {t('terms.headerTitle')}
+        </Text>
         <View style={styles.backButton} />
       </View>
 
@@ -26,13 +38,17 @@ export default function TermsScreen() {
       >
         <Text style={styles.lastUpdated}>Ultima atualizacao: 25 de marco de 2026</Text>
 
-        <Text style={styles.sectionTitle}>1. Aceitacao dos Termos</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          1. Aceitacao dos Termos
+        </Text>
         <Text style={styles.paragraph}>
           Ao acessar e utilizar o aplicativo Rumo Praga ("App"), voce concorda com estes Termos de
           Uso. Caso nao concorde com algum dos termos aqui descritos, por favor, nao utilize o App.
         </Text>
 
-        <Text style={styles.sectionTitle}>2. Descricao do Servico</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          2. Descricao do Servico
+        </Text>
         <Text style={styles.paragraph}>
           O Rumo Praga e um aplicativo de diagnostico inteligente de pragas agricolas que utiliza
           inteligencia artificial para analisar imagens de plantas e identificar possiveis pragas,
@@ -40,7 +56,9 @@ export default function TermsScreen() {
           fotos, historico de diagnosticos, chat com IA especializada e relatorios.
         </Text>
 
-        <Text style={styles.sectionTitle}>3. Uso do Aplicativo</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          3. Uso do Aplicativo
+        </Text>
         <Text style={styles.paragraph}>
           Voce se compromete a utilizar o App de forma responsavel e em conformidade com a
           legislacao vigente. E proibido:{'\n\n'}- Utilizar o App para fins ilegais ou nao
@@ -49,7 +67,9 @@ export default function TermsScreen() {
           autorizacao.
         </Text>
 
-        <Text style={styles.sectionTitle}>4. Diagnosticos Informativos</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          4. Diagnosticos Informativos
+        </Text>
         <Text style={styles.importantBox}>
           Os diagnosticos fornecidos pelo Rumo Praga sao meramente informativos e baseados em
           modelos de inteligencia artificial. Eles NAO substituem a avaliacao de um engenheiro
@@ -58,7 +78,9 @@ export default function TermsScreen() {
           ou tratamento de culturas.
         </Text>
 
-        <Text style={styles.sectionTitle}>5. Responsabilidades do Usuario</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          5. Responsabilidades do Usuario
+        </Text>
         <Text style={styles.paragraph}>
           O usuario e responsavel por:{'\n\n'}- Manter a confidencialidade de suas credenciais de
           acesso;{'\n'}- Garantir a qualidade das imagens enviadas para analise;{'\n'}- Validar os
@@ -66,7 +88,9 @@ export default function TermsScreen() {
           cadastrais atualizados.
         </Text>
 
-        <Text style={styles.sectionTitle}>6. Limitacao de Responsabilidade</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          6. Limitacao de Responsabilidade
+        </Text>
         <Text style={styles.paragraph}>
           A AgroRumo nao se responsabiliza por danos diretos, indiretos, incidentais ou consequentes
           decorrentes do uso dos diagnosticos fornecidos pelo App. A precisao dos diagnosticos
@@ -74,21 +98,27 @@ export default function TermsScreen() {
           ambientais.
         </Text>
 
-        <Text style={styles.sectionTitle}>7. Propriedade Intelectual</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          7. Propriedade Intelectual
+        </Text>
         <Text style={styles.paragraph}>
           Todo o conteudo do App, incluindo mas nao se limitando a textos, graficos, logotipos,
           icones, imagens, modelos de IA e software, e de propriedade exclusiva da AgroRumo ou de
           seus licenciadores e e protegido pelas leis de propriedade intelectual aplicaveis.
         </Text>
 
-        <Text style={styles.sectionTitle}>8. Dados e Privacidade</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          8. Dados e Privacidade
+        </Text>
         <Text style={styles.paragraph}>
           A coleta e o tratamento de dados pessoais sao regidos pela nossa Politica de Privacidade,
           que complementa estes Termos de Uso. Ao utilizar o App, voce tambem concorda com a
           Politica de Privacidade.
         </Text>
 
-        <Text style={styles.sectionTitle}>9. Planos e Assinatura</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          9. Planos e Assinatura
+        </Text>
         <Text style={styles.paragraph}>
           O App oferece um plano gratuito com funcionalidades limitadas e planos pagos com recursos
           adicionais. Os detalhes de cada plano, incluindo precos e funcionalidades, estao
@@ -96,27 +126,35 @@ export default function TermsScreen() {
           momento, mas nao gera direito a reembolso proporcional do periodo ja pago.
         </Text>
 
-        <Text style={styles.sectionTitle}>10. Cancelamento e Encerramento</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          10. Cancelamento e Encerramento
+        </Text>
         <Text style={styles.paragraph}>
           Voce pode encerrar sua conta a qualquer momento entrando em contato com nosso suporte. A
           AgroRumo reserva-se o direito de suspender ou encerrar contas que violem estes Termos de
           Uso, sem aviso previo.
         </Text>
 
-        <Text style={styles.sectionTitle}>11. Alteracoes nos Termos</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          11. Alteracoes nos Termos
+        </Text>
         <Text style={styles.paragraph}>
           A AgroRumo pode alterar estes Termos de Uso a qualquer momento. As alteracoes serao
           comunicadas pelo App e entrarao em vigor na data de publicacao. O uso continuado do App
           apos as alteracoes constitui aceitacao dos novos termos.
         </Text>
 
-        <Text style={styles.sectionTitle}>12. Contato</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          12. Contato
+        </Text>
         <Text style={styles.paragraph}>
           Em caso de duvidas sobre estes Termos de Uso, entre em contato conosco pelo email:
           contato@agrorumo.com.br
         </Text>
 
-        <Text style={styles.sectionTitle}>14. Contato Legal</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          14. Contato Legal
+        </Text>
         <Text style={styles.paragraph}>
           Razao Social: AgroRumo (Manoel Nascimento - Pessoa Fisica){'\n'}
           CNPJ: Em processo de registro como MEI{'\n'}
@@ -124,7 +162,9 @@ export default function TermsScreen() {
           DPO: dpo@agrorumo.com.br
         </Text>
 
-        <Text style={styles.sectionTitle}>15. Lei Aplicavel e Foro</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          15. Lei Aplicavel e Foro
+        </Text>
         <Text style={styles.paragraph}>
           Este Termo e regido pelas leis da Republica Federativa do Brasil, incluindo o Codigo de
           Defesa do Consumidor (Lei 8.078/1990) e a LGPD (Lei 13.709/2018). Fica eleito o foro da

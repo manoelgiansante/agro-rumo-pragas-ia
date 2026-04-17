@@ -30,7 +30,7 @@ export function configureNotificationHandler() {
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
   // Push notifications only work on physical devices
   if (!Device.isDevice) {
-    console.warn('Push notifications require a physical device');
+    if (__DEV__) console.warn('Push notifications require a physical device');
     return null;
   }
 
@@ -68,7 +68,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   }
 
   if (finalStatus !== 'granted') {
-    console.warn('Notification permissions not granted');
+    if (__DEV__) console.warn('Notification permissions not granted');
     return null;
   }
 
@@ -78,7 +78,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
 
     if (!projectId) {
-      console.warn('EAS projectId not found, cannot register for push notifications');
+      if (__DEV__) console.warn('EAS projectId not found, cannot register for push notifications');
       return null;
     }
 
@@ -90,7 +90,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
     return token;
   } catch (error) {
-    console.error('Error getting push token:', error);
+    if (__DEV__) console.error('Error getting push token:', error);
     return null;
   }
 }

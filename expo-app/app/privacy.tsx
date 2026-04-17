@@ -2,9 +2,11 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
 
 export default function PrivacyScreen() {
+  const { t } = useTranslation();
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -12,10 +14,20 @@ export default function PrivacyScreen() {
           onPress={() => router.back()}
           style={styles.backButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('privacy.backA11y')}
         >
-          <Ionicons name="chevron-back" size={24} color={Colors.accent} />
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color={Colors.accent}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Politica de Privacidade</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          {t('privacy.headerTitle')}
+        </Text>
         <View style={styles.backButton} />
       </View>
 
@@ -33,13 +45,22 @@ export default function PrivacyScreen() {
           - Lei n. 13.709/2018).
         </Text>
 
-        <Text style={styles.sectionTitle}>1. Dados Coletados</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          1. Dados Coletados
+        </Text>
         <Text style={styles.paragraph}>
           Coletamos os seguintes dados para fornecer e melhorar nossos servicos:
         </Text>
         <View style={styles.list}>
           <View style={styles.listItem}>
-            <Ionicons name="mail-outline" size={16} color={Colors.accent} style={styles.listIcon} />
+            <Ionicons
+              name="mail-outline"
+              size={16}
+              color={Colors.accent}
+              style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Email:</Text> utilizado para autenticacao, comunicacao e
               recuperacao de conta.
@@ -51,6 +72,8 @@ export default function PrivacyScreen() {
               size={16}
               color={Colors.accent}
               style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
             />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Nome:</Text> utilizado para personalizacao da experiencia no
@@ -63,6 +86,8 @@ export default function PrivacyScreen() {
               size={16}
               color={Colors.accent}
               style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
             />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Localizacao (opcional):</Text> utilizada para
@@ -75,6 +100,8 @@ export default function PrivacyScreen() {
               size={16}
               color={Colors.accent}
               style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
             />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Fotos de plantas:</Text> enviadas para analise por
@@ -87,6 +114,8 @@ export default function PrivacyScreen() {
               size={16}
               color={Colors.accent}
               style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
             />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Dados de uso:</Text> informacoes sobre como voce interage
@@ -95,7 +124,9 @@ export default function PrivacyScreen() {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>2. Como Usamos seus Dados</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          2. Como Usamos seus Dados
+        </Text>
         <Text style={styles.paragraph}>
           Seus dados sao utilizados para:{'\n\n'}- Fornecer os servicos de diagnostico de pragas;
           {'\n'}- Personalizar sua experiencia no App;{'\n'}- Gerar relatorios e historico de
@@ -103,14 +134,18 @@ export default function PrivacyScreen() {
           Melhorar nossos modelos de inteligencia artificial;{'\n'}- Cumprir obrigacoes legais.
         </Text>
 
-        <Text style={styles.sectionTitle}>3. Armazenamento de Dados</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          3. Armazenamento de Dados
+        </Text>
         <Text style={styles.paragraph}>
           Seus dados sao armazenados de forma segura utilizando a plataforma Supabase, com
           servidores protegidos por criptografia em transito (TLS) e em repouso. As imagens enviadas
           para analise sao armazenadas em buckets seguros com controle de acesso por usuario.
         </Text>
 
-        <Text style={styles.sectionTitle}>4. Compartilhamento com Terceiros</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          4. Compartilhamento com Terceiros
+        </Text>
         <Text style={styles.importantBox}>
           As imagens de plantas sao enviadas para o servico Claude, da Anthropic (inteligencia
           artificial), exclusivamente para fins de analise e diagnostico. Nenhum dado pessoal que
@@ -132,7 +167,9 @@ export default function PrivacyScreen() {
           exigido por lei ou ordem judicial;{'\n'}- Para proteger nossos direitos legais.
         </Text>
 
-        <Text style={styles.sectionTitle}>5. Seus Direitos (LGPD)</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          5. Seus Direitos (LGPD)
+        </Text>
         <Text style={styles.paragraph}>
           De acordo com a LGPD, voce tem os seguintes direitos sobre seus dados pessoais:
         </Text>
@@ -143,6 +180,8 @@ export default function PrivacyScreen() {
               size={16}
               color={Colors.accent}
               style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
             />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Confirmacao e acesso:</Text> saber se tratamos seus dados e
@@ -155,6 +194,8 @@ export default function PrivacyScreen() {
               size={16}
               color={Colors.accent}
               style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
             />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Correcao:</Text> solicitar a correcao de dados incompletos
@@ -167,6 +208,8 @@ export default function PrivacyScreen() {
               size={16}
               color={Colors.accent}
               style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
             />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Eliminacao:</Text> solicitar a exclusao de dados pessoais
@@ -179,6 +222,8 @@ export default function PrivacyScreen() {
               size={16}
               color={Colors.accent}
               style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
             />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Portabilidade:</Text> solicitar a transferencia de seus
@@ -191,6 +236,8 @@ export default function PrivacyScreen() {
               size={16}
               color={Colors.accent}
               style={styles.listIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
             />
             <Text style={styles.listText}>
               <Text style={styles.bold}>Revogacao:</Text> revogar o consentimento a qualquer
@@ -199,7 +246,9 @@ export default function PrivacyScreen() {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>6. Seguranca</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          6. Seguranca
+        </Text>
         <Text style={styles.paragraph}>
           Implementamos medidas tecnicas e organizacionais para proteger seus dados, incluindo:
           {'\n\n'}- Criptografia de dados em transito e em repouso;{'\n'}- Autenticacao segura com
@@ -208,28 +257,36 @@ export default function PrivacyScreen() {
           seguranca.
         </Text>
 
-        <Text style={styles.sectionTitle}>7. Retencao de Dados</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          7. Retencao de Dados
+        </Text>
         <Text style={styles.paragraph}>
           Mantemos seus dados pessoais pelo tempo necessario para fornecer os servicos contratados
           ou conforme exigido por lei. Apos o encerramento da conta, seus dados serao eliminados em
           ate 30 dias, exceto quando houver obrigacao legal de retencao.
         </Text>
 
-        <Text style={styles.sectionTitle}>8. Cookies e Tecnologias Similares</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          8. Cookies e Tecnologias Similares
+        </Text>
         <Text style={styles.paragraph}>
           O App pode utilizar tecnologias de rastreamento local (AsyncStorage) para manter
           preferencias do usuario e estado da sessao. Esses dados sao armazenados apenas no
           dispositivo do usuario.
         </Text>
 
-        <Text style={styles.sectionTitle}>9. Alteracoes nesta Politica</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          9. Alteracoes nesta Politica
+        </Text>
         <Text style={styles.paragraph}>
           Podemos atualizar esta Politica de Privacidade periodicamente. Notificaremos voce sobre
           alteracoes significativas atraves do App. Recomendamos que revise esta politica
           regularmente.
         </Text>
 
-        <Text style={styles.sectionTitle}>10. Contato e Encarregado de Dados</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          10. Contato e Encarregado de Dados
+        </Text>
         <Text style={styles.paragraph}>
           Para exercer seus direitos ou esclarecer duvidas sobre o tratamento de seus dados
           pessoais, entre em contato conosco:{'\n\n'}

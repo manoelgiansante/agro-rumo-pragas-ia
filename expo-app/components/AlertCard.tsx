@@ -70,7 +70,11 @@ export const AlertCard = React.memo(function AlertCard({ alert }: AlertCardProps
     >
       <View style={styles.header}>
         <View style={[styles.iconCircle, { backgroundColor: config.bg }]}>
-          <Ionicons name={alert.icon as any} size={18} color={config.text} />
+          <Ionicons
+            name={alert.icon as keyof typeof Ionicons.glyphMap}
+            size={18}
+            color={config.text}
+          />
         </View>
         <View style={styles.headerText}>
           <Text style={[styles.title, isDark && { color: Colors.textDark }]} numberOfLines={2}>

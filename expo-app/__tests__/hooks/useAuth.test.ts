@@ -182,4 +182,92 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.user).toEqual(mockSession.user);
   });
+
+  it('signUp calls auth service with correct params', async () => {
+    setupDefaultMocks(null);
+    mockSignUp.mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    await act(async () => {
+      await result.current.signUp('new@example.com', 'pass123', 'John Doe');
+    });
+
+    expect(mockSignUp).toHaveBeenCalledWith('new@example.com', 'pass123', 'John Doe');
+  });
+
+  it('signUp sets error state on failure', async () => {
+    setupDefaultMocks(null);
+    mockSignUp.mockRejectedValueOnce(new Error('User already exists'));
+    const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    await act(async () => {
+      try {
+        await result.current.signUp('existing@email.com', 'pass', 'Name');
+      } catch {
+        // Expected
+      }
+    });
+
+    expect(result.current.error).toBe('User already exists');
+  });
+
+  it('resetPassword calls auth service', async () => {
+    setupDefaultMocks(null);
+    mockResetPassword.mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    await act(async () => {
+      await result.current.resetPassword('user@example.com');
+    });
+
+    expect(mockResetPassword).toHaveBeenCalledWith('user@example.com');
+  });
+
+  it('resetPassword sets error state on failure', async () => {
+    setupDefaultMocks(null);
+    mockResetPassword.mockRejectedValueOnce(new Error('Rate limit'));
+    const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    await act(async () => {
+      try {
+        await result.current.resetPassword('user@example.com');
+      } catch {
+        // Expected
+      }
+    });
+
+    expect(result.current.error).toBe('Rate limit');
+  });
+
+  it('signOut sets error state on failure but does not throw', async () => {
+    setupDefaultMocks(mockSession);
+    mockSignOut.mockRejectedValueOnce(new Error('Network error'));
+    const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isAuthenticated).toBe(true);
+    });
+
+    await act(async () => {
+      await result.current.signOut();
+    });
+
+    expect(result.current.error).toBe('Network error');
+  });
 });

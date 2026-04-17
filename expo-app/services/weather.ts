@@ -176,15 +176,16 @@ export async function fetchWeather(
 
     return weatherData;
   } catch (error) {
-    console.error(
-      '[Weather] Failed to fetch weather data:',
-      error instanceof Error ? error.message : error,
-    );
+    if (__DEV__)
+      console.error(
+        '[Weather] Failed to fetch weather data:',
+        error instanceof Error ? error.message : error,
+      );
 
     // Network failed -- return stale cache if available so the UI still shows something
     const stale = await getStaleCache();
     if (stale) {
-      console.warn('[Weather] Using stale cache as fallback');
+      if (__DEV__) console.warn('[Weather] Using stale cache as fallback');
       return stale;
     }
 

@@ -143,7 +143,7 @@ export default function CropSelectScreen() {
           accessibilityRole="button"
           accessibilityHint={t('cropSelect.startHint')}
         >
-          <LinearGradient colors={Gradients.hero as any} style={styles.startBtn}>
+          <LinearGradient colors={Gradients.hero} style={styles.startBtn}>
             <Text style={styles.startBtnText}>{t('cropSelect.startDiagnosis')}</Text>
             <Ionicons name="arrow-forward" size={18} color="#FFF" />
           </LinearGradient>

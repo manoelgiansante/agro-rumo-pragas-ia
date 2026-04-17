@@ -1,6 +1,7 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Sentry from '@sentry/react-native';
 import { Colors, Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
 import i18n from '../i18n';
 
@@ -25,8 +26,16 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[ErrorBoundary] Erro capturado:', error.message);
-    console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack);
+    if (__DEV__) console.error('[ErrorBoundary] Erro capturado:', error.message);
+    if (__DEV__) console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack);
+    // Report to Sentry for production crash tracking
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack ?? undefined,
+        },
+      },
+    });
   }
 
   resetError = () => {

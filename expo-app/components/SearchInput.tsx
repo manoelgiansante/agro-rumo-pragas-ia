@@ -16,7 +16,7 @@ export function SearchInput({ value, onChangeText, placeholder }: SearchInputPro
   const resolvedPlaceholder = placeholder || t('common.searchDefault');
 
   return (
-    <View style={[styles.container, isDark && styles.containerDark]}>
+    <View style={[styles.container, isDark && styles.containerDark]} accessibilityRole="search">
       <Ionicons name="search" size={18} color={Colors.textSecondary} />
       <TextInput
         style={[styles.input, isDark && styles.inputDark]}

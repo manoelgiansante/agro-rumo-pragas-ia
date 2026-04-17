@@ -26,23 +26,48 @@ export interface AnalyticsEvent {
 }
 
 /**
- * Initialize analytics with the authenticated user ID.
- * Call once after login.
+ * Internal: guard against uncaught interval callbacks that could kill the loop.
+ * A single failed flush must never prevent future flushes.
  */
-export function initAnalytics(userId: string): void {
-  currentUserId = userId;
-
-  if (!flushTimer) {
-    flushTimer = setInterval(flushEvents, FLUSH_INTERVAL_MS);
+function safeFlushTick(): void {
+  try {
+    void flushEvents().catch((err) => {
+      if (__DEV__) console.warn('[Analytics] Flush tick error (swallowed):', err);
+    });
+  } catch (err) {
+    if (__DEV__) console.warn('[Analytics] Flush tick sync error (swallowed):', err);
   }
 }
 
 /**
+ * Initialize analytics with the authenticated user ID.
+ * Safe to call multiple times (e.g. re-login) — prior timer is cleared first.
+ */
+export function initAnalytics(userId: string): void {
+  currentUserId = userId;
+
+  // Clear any existing timer before creating a new one (handles re-login / user switch)
+  if (flushTimer) {
+    clearInterval(flushTimer);
+    flushTimer = null;
+  }
+  flushTimer = setInterval(safeFlushTick, FLUSH_INTERVAL_MS);
+}
+
+/**
  * Reset analytics on logout.
+ * Guaranteed to clear the interval even if flush fails.
  */
 export function resetAnalytics(): void {
   currentUserId = null;
-  flushEvents(); // flush remaining events
+  try {
+    flushEvents().catch((err) => {
+      if (__DEV__) console.warn('[Analytics] Reset flush error (swallowed):', err);
+    });
+  } catch (err) {
+    if (__DEV__) console.warn('[Analytics] Reset flush sync error (swallowed):', err);
+  }
+  // Always clear interval — even if flush threw, the timer must die
   if (flushTimer) {
     clearInterval(flushTimer);
     flushTimer = null;

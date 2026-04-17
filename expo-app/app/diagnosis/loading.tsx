@@ -18,6 +18,8 @@ import { addToQueue } from '../../services/diagnosisQueue';
 import { useTranslation } from 'react-i18next';
 import { useDiagnosis } from '../../contexts/DiagnosisContext';
 
+const LOCATION_TIMEOUT_MS = 3000;
+
 export default function LoadingScreen() {
   const { t } = useTranslation();
   const STEPS = [
@@ -36,6 +38,34 @@ export default function LoadingScreen() {
   const stepOpacity = useSharedValue(1);
   const stepTranslateY = useSharedValue(0);
   const hasStartedAnalysis = useRef(false);
+  const isMountedRef = useRef(true);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const locationRef = useRef(location);
+  const isConnectedRef = useRef(isConnected);
+
+  // Keep refs in sync with latest props/state values so async closures don't
+  // read stale data (race condition fix: deps [] used to capture initial null).
+  useEffect(() => {
+    locationRef.current = location;
+  }, [location]);
+
+  useEffect(() => {
+    isConnectedRef.current = isConnected;
+  }, [isConnected]);
+
+  // Safe setTimeout helper — tracks IDs so cleanup can cancel all pending
+  // callbacks when the component unmounts mid-animation/mid-analysis.
+  const safeSetTimeout = (fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      // Drop ID from tracking list and no-op if unmounted
+      timeoutsRef.current = timeoutsRef.current.filter((t) => t !== id);
+      if (!isMountedRef.current) return;
+      fn();
+    }, ms);
+    timeoutsRef.current.push(id);
+    return id;
+  };
 
   useEffect(() => {
     getCurrentLocation();
@@ -47,34 +77,65 @@ export default function LoadingScreen() {
     hasStartedAnalysis.current = true;
 
     const interval = setInterval(() => {
+      if (!isMountedRef.current) return;
       // Fade out, swap text, fade in — runs on UI thread via Reanimated worklets
       stepOpacity.value = withTiming(0, { duration: 180, easing: Easing.out(Easing.quad) });
       stepTranslateY.value = withTiming(-6, { duration: 180, easing: Easing.out(Easing.quad) });
-      setTimeout(() => {
+      safeSetTimeout(() => {
         setStep((s) => Math.min(s + 1, STEPS.length - 1));
         stepTranslateY.value = 6;
         stepOpacity.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) });
         stepTranslateY.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
       }, 180);
     }, 1500);
+    intervalRef.current = interval;
+
+    // Wait for location to resolve (or timeout) BEFORE sending diagnosis.
+    // Previous version used deps [] + closure on `location` which was always
+    // null on first render — producing null coords even when location was ready.
+    const waitForLocation = async (): Promise<{
+      latitude: number | null;
+      longitude: number | null;
+    }> => {
+      const start = Date.now();
+      while (Date.now() - start < LOCATION_TIMEOUT_MS) {
+        if (!isMountedRef.current) return { latitude: null, longitude: null };
+        if (locationRef.current) {
+          return {
+            latitude: locationRef.current.latitude,
+            longitude: locationRef.current.longitude,
+          };
+        }
+        await new Promise<void>((resolve) => {
+          safeSetTimeout(() => resolve(), 100);
+        });
+      }
+      return { latitude: null, longitude: null };
+    };
 
     const analyze = async () => {
       try {
         progress.value = withTiming(0.3, { duration: 1000 });
 
+        const coords = await waitForLocation();
+        if (!isMountedRef.current) return;
+
         const result = await sendDiagnosis(
           imageBase64 || '',
           cropApiName || 'Soybean',
-          location?.latitude ?? null,
-          location?.longitude ?? null,
+          coords.latitude,
+          coords.longitude,
           session?.access_token || '',
           user?.id,
         );
 
+        if (!isMountedRef.current) return;
+
         progress.value = withTiming(1, { duration: 500 });
 
         clearInterval(interval);
-        setTimeout(() => {
+        intervalRef.current = null;
+        safeSetTimeout(() => {
           router.replace({
             pathname: '/diagnosis/result',
             params: { data: JSON.stringify(result) },
@@ -82,18 +143,23 @@ export default function LoadingScreen() {
         }, 600);
       } catch (error: unknown) {
         clearInterval(interval);
+        intervalRef.current = null;
+        if (!isMountedRef.current) return;
 
         // If offline, queue the diagnosis for later sync
-        if (isConnected === false) {
+        if (isConnectedRef.current === false) {
           try {
+            const coords = locationRef.current;
             await addToQueue({
               imageBase64: imageBase64 || '',
               cropType: cropApiName || 'Soybean',
-              latitude: location?.latitude ?? null,
-              longitude: location?.longitude ?? null,
+              latitude: coords?.latitude ?? null,
+              longitude: coords?.longitude ?? null,
             });
+            if (!isMountedRef.current) return;
             router.replace({ pathname: '/diagnosis/result', params: { queued: 'true' } });
           } catch {
+            if (!isMountedRef.current) return;
             router.replace({
               pathname: '/diagnosis/result',
               params: { error: t('diagnosis.offlineQueueError') },
@@ -110,7 +176,16 @@ export default function LoadingScreen() {
     };
 
     analyze();
-    return () => clearInterval(interval);
+
+    return () => {
+      isMountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      timeoutsRef.current.forEach((id) => clearTimeout(id));
+      timeoutsRef.current = [];
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

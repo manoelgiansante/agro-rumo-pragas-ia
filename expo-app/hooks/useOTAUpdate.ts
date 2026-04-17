@@ -30,7 +30,7 @@ export function useOTAUpdate() {
       }
     } catch (e) {
       // Silently fail - OTA updates are not critical
-      console.warn('OTA update check failed:', e);
+      if (__DEV__) console.warn('OTA update check failed:', e);
     } finally {
       setIsChecking(false);
       setIsDownloading(false);

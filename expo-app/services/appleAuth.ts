@@ -69,9 +69,13 @@ export async function signInWithApple() {
     }
 
     return { session: data.session, user: data.user };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // User cancelled - not an error
-    if (error.code === 'ERR_REQUEST_CANCELED') {
+    if (
+      error instanceof Object &&
+      'code' in error &&
+      (error as { code: string }).code === 'ERR_REQUEST_CANCELED'
+    ) {
       return null;
     }
     throw error;

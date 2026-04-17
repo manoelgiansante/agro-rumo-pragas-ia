@@ -73,6 +73,7 @@ export default function EditProfileScreen() {
 
   useEffect(() => {
     if (!user) return;
+    let mounted = true;
 
     (async () => {
       try {
@@ -82,7 +83,7 @@ export default function EditProfileScreen() {
           .eq('id', user.id)
           .single();
 
-        if (data) {
+        if (mounted && data) {
           setProfile({
             full_name: data.full_name || '',
             city: data.city || '',
@@ -91,11 +92,14 @@ export default function EditProfileScreen() {
           });
         }
       } catch (err) {
-        console.error('Failed to load profile:', err);
+        if (__DEV__) console.error('Failed to load profile:', err);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
   const toggleCrop = useCallback((cropId: string) => {
@@ -138,7 +142,7 @@ export default function EditProfileScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err) {
-      console.error('Failed to save profile:', err);
+      if (__DEV__) console.error('Failed to save profile:', err);
       Alert.alert(t('settings.editProfile'), t('settings.profileSaveError'));
     } finally {
       setSaving(false);
@@ -164,13 +168,31 @@ export default function EditProfileScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={Colors.accent} />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel={t('editProfile.backA11y')}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={Colors.accent}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, isDark && styles.textDark]}>
+          <Text style={[styles.headerTitle, isDark && styles.textDark]} accessibilityRole="header">
             {t('settings.editProfile')}
           </Text>
-          <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.saveBtn}>
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={saving}
+            style={styles.saveBtn}
+            accessibilityRole="button"
+            accessibilityLabel={t('editProfile.saveA11y')}
+            accessibilityState={{ disabled: saving, busy: saving }}
+          >
             {saving ? (
               <ActivityIndicator size="small" color={Colors.accent} />
             ) : (
@@ -192,6 +214,9 @@ export default function EditProfileScreen() {
             placeholderTextColor={Colors.systemGray3}
             autoCapitalize="words"
             returnKeyType="next"
+            autoComplete="name"
+            textContentType="name"
+            accessibilityLabel={t('editProfile.fullNameA11y')}
           />
         </View>
 
@@ -206,6 +231,9 @@ export default function EditProfileScreen() {
             placeholderTextColor={Colors.systemGray3}
             autoCapitalize="words"
             returnKeyType="next"
+            autoComplete="postal-address-locality"
+            textContentType="addressCity"
+            accessibilityLabel={t('editProfile.cityA11y')}
           />
         </View>
 
@@ -218,6 +246,9 @@ export default function EditProfileScreen() {
                 key={st}
                 style={[styles.stateChip, profile.state === st && styles.stateChipActive]}
                 onPress={() => setProfile((p) => ({ ...p, state: p.state === st ? '' : st }))}
+                accessibilityRole="button"
+                accessibilityLabel={t('editProfile.stateSelectA11y', { state: st })}
+                accessibilityState={{ selected: profile.state === st }}
               >
                 <Text
                   style={[styles.stateChipText, profile.state === st && styles.stateChipTextActive]}
@@ -243,8 +274,17 @@ export default function EditProfileScreen() {
                     selected && { backgroundColor: crop.color + '30', borderColor: crop.color },
                   ]}
                   onPress={() => toggleCrop(crop.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('editProfile.cropToggleA11y', { crop: crop.displayName })}
+                  accessibilityState={{ selected }}
                 >
-                  <Text style={styles.cropIcon}>{crop.icon}</Text>
+                  <Text
+                    style={styles.cropIcon}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                  >
+                    {crop.icon}
+                  </Text>
                   <Text
                     style={[styles.cropName, selected && { color: crop.color, fontWeight: '600' }]}
                   >
@@ -259,7 +299,13 @@ export default function EditProfileScreen() {
         {/* Email (read-only) */}
         <View style={styles.fieldGroup}>
           <Text style={[styles.fieldLabel, isDark && styles.textMuted]}>Email</Text>
-          <View style={[styles.input, styles.inputDisabled, isDark && styles.inputDark]}>
+          <View
+            style={[styles.input, styles.inputDisabled, isDark && styles.inputDark]}
+            accessible
+            accessibilityLabel={t('editProfile.emailReadOnlyA11y')}
+            accessibilityValue={{ text: user?.email || '' }}
+            accessibilityState={{ disabled: true }}
+          >
             <Text style={[styles.inputDisabledText, isDark && styles.textMuted]}>
               {user?.email || ''}
             </Text>

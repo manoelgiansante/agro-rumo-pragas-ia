@@ -53,7 +53,11 @@ export function OfflineBanner() {
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.banner, animatedStyle, { paddingTop: insets.top }]}>
+    <Animated.View
+      style={[styles.banner, animatedStyle, { paddingTop: insets.top }]}
+      accessibilityLabel={t('common.offlineBanner')}
+      accessibilityRole="alert"
+    >
       <Ionicons name="cloud-offline-outline" size={16} color={Colors.black} />
       <Text style={styles.text}>{t('common.offline')}</Text>
     </Animated.View>

@@ -37,7 +37,7 @@ export function useNotifications(shouldRegister: boolean = false): UseNotificati
         await supabase.from('pragas_profiles').update({ push_token: token }).eq('id', user.id);
       }
     } catch (error) {
-      console.warn('Failed to sync push token to Supabase:', error);
+      if (__DEV__) console.warn('Failed to sync push token to Supabase:', error);
     }
   }, []);
 
