@@ -55,11 +55,16 @@ import {
   getSavedPushToken,
   schedulePestAlertNotifications,
   scheduleLocalPestAlert,
+  __resetForTests,
 } from '../../services/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // Reset the module's idempotency flags so each test can observe a fresh
+  // call to setNotificationHandler / setNotificationChannelAsync. Required
+  // after the iOS 26 TurboModule crash fix (handlerConfigured boolean).
+  __resetForTests();
   // Re-apply default mocks after clearAllMocks
   (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
   (Notifications.requestPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });

@@ -7,35 +7,73 @@ import i18n from '../i18n';
 
 const PUSH_TOKEN_KEY = '@rumo_pragas_push_token';
 
+// -----------------------------------------------------------------------------
+// iOS 26 TurboModule crash fix (preventive — follows Finance rejection 2026-04-20)
+// -----------------------------------------------------------------------------
+// Previously `configureNotificationHandler()` was called at module load from
+// hooks/useNotifications.ts. On the New Architecture (TurboModules) under iOS
+// 26.x, the synchronous `Notifications.setNotificationHandler(...)` call during
+// JS bundle evaluation can raise an unhandled ObjC exception inside
+// `ObjCTurboModule::performVoidMethodInvocation`, which propagates to
+// `std::terminate()` -> `abort()` -> SIGABRT (crash on launch before the RN
+// ErrorBoundary is mounted).
+//
+// Fix: lazy, idempotent, defensive. The exported function is now safe to call
+// any number of times — internally it runs the native side-effect at most once
+// and wraps every native call in try/catch + Platform guard. If the native
+// init throws, push notifications simply degrade (no token, no listener)
+// instead of killing the app.
+// -----------------------------------------------------------------------------
+let handlerConfigured = false;
+let androidChannelsConfigured = false;
+
 /**
- * Configures the default notification handler.
- * Must be called at module level (outside components).
+ * TEST-ONLY: reset idempotency flags so unit tests can assert
+ * setNotificationHandler / setNotificationChannelAsync were called.
+ * Do NOT call from production code — the flags exist precisely to prevent
+ * redundant native-side effects that can crash on iOS 26.
  */
-export function configureNotificationHandler() {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+export function __resetForTests() {
+  handlerConfigured = false;
+  androidChannelsConfigured = false;
 }
 
 /**
- * Registers for push notifications and returns the Expo push token.
- * On Android, also creates the default notification channel.
- * Returns null if permissions are denied or running on simulator.
+ * Configures the default notification handler.
+ * SAFE TO CALL MULTIPLE TIMES — internally idempotent.
+ * Previously required to be called at module level; now deferred until the
+ * first foreground listener/register call (see useNotifications hook).
  */
-export async function registerForPushNotificationsAsync(): Promise<string | null> {
-  // Push notifications only work on physical devices
-  if (!Device.isDevice) {
-    if (__DEV__) console.warn('Push notifications require a physical device');
-    return null;
+export function configureNotificationHandler() {
+  if (handlerConfigured) return;
+  if (Platform.OS === 'web') {
+    handlerConfigured = true;
+    return;
   }
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+    handlerConfigured = true;
+  } catch (error) {
+    // Non-fatal: iOS 26 TurboModule may throw during init; log and continue.
+    if (__DEV__) console.warn('[notifications] setNotificationHandler failed (non-fatal):', error);
+    handlerConfigured = true; // avoid retry storm on every call
+  }
+}
 
-  // Create Android notification channel
-  if (Platform.OS === 'android') {
+async function ensureAndroidChannelsConfigured(): Promise<void> {
+  if (androidChannelsConfigured) return;
+  if (Platform.OS !== 'android') {
+    androidChannelsConfigured = true;
+    return;
+  }
+  try {
     await Notifications.setNotificationChannelAsync('pest-alerts', {
       name: i18n.t('notifications.pestAlertsChannel'),
       description: i18n.t('notifications.pestAlertsDesc'),
@@ -44,36 +82,62 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       lightColor: '#1A966B',
       sound: 'default',
     });
-
     await Notifications.setNotificationChannelAsync('general', {
       name: i18n.t('notifications.generalChannel'),
       description: i18n.t('notifications.generalDesc'),
       importance: Notifications.AndroidImportance.DEFAULT,
     });
+    androidChannelsConfigured = true;
+  } catch (error) {
+    if (__DEV__) console.warn('[notifications] Android channels failed (non-fatal):', error);
+    androidChannelsConfigured = true;
   }
+}
 
-  // Check and request permissions
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync({
-      ios: {
-        allowAlert: true,
-        allowBadge: true,
-        allowSound: true,
-      },
-    });
-    finalStatus = status;
-  }
-
-  if (finalStatus !== 'granted') {
-    if (__DEV__) console.warn('Notification permissions not granted');
+/**
+ * Registers for push notifications and returns the Expo push token.
+ * On Android, also creates the default notification channel.
+ * Returns null if permissions are denied or running on simulator.
+ * All native calls are wrapped in try/catch — failures degrade the feature
+ * silently instead of crashing the app.
+ */
+export async function registerForPushNotificationsAsync(): Promise<string | null> {
+  // Web has no native push — bail before touching any TurboModule.
+  if (Platform.OS === 'web') {
     return null;
   }
 
-  // Get Expo push token
   try {
+    // Push notifications only work on physical devices
+    if (!Device.isDevice) {
+      if (__DEV__) console.warn('Push notifications require a physical device');
+      return null;
+    }
+
+    // Lazy init on first use only.
+    configureNotificationHandler();
+    await ensureAndroidChannelsConfigured();
+
+    // Check and request permissions
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+        },
+      });
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+      if (__DEV__) console.warn('Notification permissions not granted');
+      return null;
+    }
+
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
 
@@ -90,7 +154,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
     return token;
   } catch (error) {
-    if (__DEV__) console.error('Error getting push token:', error);
+    if (__DEV__) console.error('Failed to register push notifications:', error);
     return null;
   }
 }
@@ -128,6 +192,8 @@ export async function schedulePestAlertNotifications(
 /**
  * Schedules a local notification for a pest alert.
  * Useful for sending alerts based on weather conditions without a server.
+ * Safe on web (no-op) and wraps native errors so a failure degrades instead
+ * of crashing the caller.
  */
 export async function scheduleLocalPestAlert(
   title: string,
@@ -135,17 +201,24 @@ export async function scheduleLocalPestAlert(
   data?: Record<string, unknown>,
   delaySeconds: number = 1,
 ) {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title,
-      body,
-      data: data ?? {},
-      sound: 'default',
-      ...(Platform.OS === 'android' && { channelId: 'pest-alerts' }),
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: delaySeconds,
-    },
-  });
+  if (Platform.OS === 'web') return;
+  try {
+    configureNotificationHandler();
+    await ensureAndroidChannelsConfigured();
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: data ?? {},
+        sound: 'default',
+        ...(Platform.OS === 'android' && { channelId: 'pest-alerts' }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: delaySeconds,
+      },
+    });
+  } catch (error) {
+    if (__DEV__) console.warn('[notifications] scheduleLocalPestAlert failed (non-fatal):', error);
+  }
 }
