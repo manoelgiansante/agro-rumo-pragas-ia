@@ -2,7 +2,7 @@ import Foundation
 import Security
 
 nonisolated enum KeychainService: Sendable {
-    private static let serviceName = "app.rork.rumopragas"
+    private static let serviceName = "com.agrorumo.rumopragas"
 
     @discardableResult
     static func save(key: String, value: String) -> Bool {

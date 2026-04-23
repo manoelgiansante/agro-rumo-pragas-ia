@@ -10,7 +10,7 @@ testing instructions so you can fully evaluate the app.
 ## Demo Account
 
 - **Email:** reviewer@agrorumo.com
-- **Password:** _(provided in the App Store Connect "Review Information" field)_
+- **Password:** `rCrelvopjjIY2OYJlFytkFdz`
 
 > The demo account has an **active Pro subscription** (RevenueCat sandbox) so
 > you can test all premium features (unlimited diagnoses, history, advanced

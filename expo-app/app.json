@@ -15,13 +15,13 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.agrorumo.rumopragas",
-      "buildNumber": "1",
+      "buildNumber": "15",
       "usesAppleSignIn": true,
       "associatedDomains": ["applinks:pragas.agrorumo.com"],
       "infoPlist": {
-        "NSCameraUsageDescription": "Precisamos da câmera para fotografar pragas e sintomas nas lavouras para diagnóstico por IA.",
-        "NSPhotoLibraryUsageDescription": "Precisamos acessar suas fotos para selecionar imagens de pragas e sintomas para diagnóstico por IA.",
-        "NSLocationWhenInUseUsageDescription": "Usamos sua localização (com sua permissão explícita) para melhorar o diagnóstico via agrônomo IA e enviar alertas regionais de pragas.",
+        "NSCameraUsageDescription": "O Rumo Pragas usa a câmera para que você fotografe plantas, folhas, frutos e sintomas visíveis de pragas ou doenças diretamente na lavoura, para diagnóstico imediato por IA agrícola.",
+        "NSPhotoLibraryUsageDescription": "O Rumo Pragas usa sua galeria para que você selecione fotos de plantas, folhas ou frutos afetados (feitas anteriormente na lavoura) e envie ao diagnóstico por IA agrícola, incluindo registros de infestações, sintomas de doenças e comparações de tratamento.",
+        "NSLocationWhenInUseUsageDescription": "O Rumo Pragas usa sua localização (apenas quando o app está em uso) para enriquecer o diagnóstico com dados de clima regional (temperatura, umidade, precipitação) que influenciam o ciclo das pragas, e para enviar alertas de infestações próximas à sua lavoura. É opcional — o app funciona normalmente sem localização.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "privacyManifests": {
@@ -96,19 +96,20 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Precisamos da câmera para fotografar pragas."
+          "cameraPermission": "O Rumo Pragas usa a câmera para que você fotografe plantas, folhas, frutos e sintomas visíveis de pragas ou doenças diretamente na lavoura, para diagnóstico imediato por IA agrícola."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Precisamos acessar suas fotos para diagnóstico."
+          "photosPermission": "O Rumo Pragas usa sua galeria para que você selecione fotos de plantas, folhas ou frutos afetados (feitas anteriormente na lavoura) e envie ao diagnóstico por IA agrícola, incluindo registros de infestações, sintomas de doenças e comparações de tratamento.",
+          "cameraPermission": "O Rumo Pragas usa a câmera para que você fotografe plantas, folhas, frutos e sintomas visíveis de pragas ou doenças diretamente na lavoura, para diagnóstico imediato por IA agrícola."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Usamos sua localização para condições climáticas."
+          "locationWhenInUsePermission": "O Rumo Pragas usa sua localização (apenas quando o app está em uso) para enriquecer o diagnóstico com dados de clima regional (temperatura, umidade, precipitação) que influenciam o ciclo das pragas, e para enviar alertas de infestações próximas à sua lavoura. É opcional — o app funciona normalmente sem localização."
         }
       ],
       "expo-sharing",
