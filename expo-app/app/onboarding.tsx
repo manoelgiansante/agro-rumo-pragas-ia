@@ -1,12 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   FlatList,
   Platform,
+  useWindowDimensions,
+  type ListRenderItemInfo,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Camera, ClipboardList, BookOpen, ShieldCheck } from 'lucide-react-native';
@@ -16,7 +17,6 @@ import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { Colors, Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const ONBOARDING_KEY = '@rumo_pragas_onboarding_seen';
 
 interface OnboardingPage {
@@ -61,43 +61,77 @@ const PAGES: OnboardingPage[] = [
 export default function OnboardingScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  // P0 (Apple Guideline 2.1.0 — iPad rejection 2026-04-29):
+  // Use useWindowDimensions() instead of Dimensions.get('window') so the
+  // FlatList page width tracks live size changes (rotation, iPad split-view,
+  // iPhone-app-on-iPad scaling between 1x/2x). Module-init Dimensions become
+  // stale on iPad and break pagingEnabled snapping → "unable to move past
+  // onboarding screens".
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const isTablet = screenWidth >= 768;
+
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const finishOnboarding = async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const finishOnboarding = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    } catch {
+      // Never block navigation on storage failure — Apple reviewer must
+      // always be able to leave this screen.
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     router.replace('/(auth)/login');
-  };
+  }, [router]);
 
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
     if (currentIndex < PAGES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const nextIndex = currentIndex + 1;
+      // Defensive: scrollToIndex can throw if the FlatList isn't laid out
+      // yet (race on cold start). Fall back to scrollToOffset using the
+      // *current* live width and update the indicator dot manually so the
+      // user is never trapped on the same page.
+      try {
+        flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+      } catch {
+        flatListRef.current?.scrollToOffset({
+          offset: nextIndex * screenWidth,
+          animated: true,
+        });
+      }
+      setCurrentIndex(nextIndex);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     } else {
       finishOnboarding();
     }
-  };
+  }, [currentIndex, screenWidth, finishOnboarding]);
 
-  const renderPage = ({ item }: { item: OnboardingPage }) => {
-    const { Icon } = item;
-    return (
-      <LinearGradient
-        colors={item.gradientColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.page}
-      >
-        <View style={styles.pageContent}>
-          <View style={styles.iconContainer}>
-            <Icon size={64} color={Colors.white} strokeWidth={1.5} />
+  const renderPage = useCallback(
+    ({ item }: ListRenderItemInfo<OnboardingPage>) => {
+      const { Icon } = item;
+      return (
+        <LinearGradient
+          colors={item.gradientColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.page, { width: screenWidth, height: screenHeight }]}
+        >
+          <View style={[styles.pageContent, isTablet && styles.pageContentTablet]}>
+            <View style={[styles.iconContainer, isTablet && styles.iconContainerTablet]}>
+              <Icon size={isTablet ? 96 : 64} color={Colors.white} strokeWidth={1.5} />
+            </View>
+            <Text style={[styles.pageTitle, isTablet && styles.pageTitleTablet]}>
+              {t(item.titleKey)}
+            </Text>
+            <Text style={[styles.pageSubtitle, isTablet && styles.pageSubtitleTablet]}>
+              {t(item.subtitleKey)}
+            </Text>
           </View>
-          <Text style={styles.pageTitle}>{t(item.titleKey)}</Text>
-          <Text style={styles.pageSubtitle}>{t(item.subtitleKey)}</Text>
-        </View>
-      </LinearGradient>
-    );
-  };
+        </LinearGradient>
+      );
+    },
+    [screenWidth, screenHeight, isTablet, t],
+  );
 
   const isLastPage = currentIndex === PAGES.length - 1;
 
@@ -112,14 +146,25 @@ export default function OnboardingScreen() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         bounces={false}
+        // Critical for iPad/orientation changes: getItemLayout uses live width
+        // so scrollToIndex always lands correctly even if width changed mid-flight.
+        getItemLayout={(_, index) => ({
+          length: screenWidth,
+          offset: screenWidth * index,
+          index,
+        })}
+        // Re-key the list on width changes so FlatList re-measures children;
+        // without this, page widths remain stale after rotation on iPad.
+        extraData={screenWidth}
         onMomentumScrollEnd={(e) => {
-          const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-          setCurrentIndex(index);
+          if (screenWidth <= 0) return;
+          const index = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
+          setCurrentIndex(Math.max(0, Math.min(index, PAGES.length - 1)));
         }}
       />
 
       {/* Bottom controls overlay */}
-      <View style={styles.bottomOverlay}>
+      <View style={[styles.bottomOverlay, isTablet && styles.bottomOverlayTablet]}>
         {/* Dot indicators */}
         <View style={styles.dotsContainer}>
           {PAGES.map((page, index) => (
@@ -130,13 +175,15 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        {/* Buttons */}
+        {/* Buttons — "Skip" and "Next" are ALWAYS rendered (Apple reviewer
+            must never be stuck). Skip immediately exits onboarding to login. */}
         <View style={styles.buttonsContainer}>
           {!isLastPage ? (
             <>
               <TouchableOpacity
                 onPress={finishOnboarding}
                 style={styles.skipButton}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 accessibilityLabel={t('onboarding.skipA11y')}
                 accessibilityRole="button"
               >
@@ -145,6 +192,7 @@ export default function OnboardingScreen() {
               <TouchableOpacity
                 onPress={goToNext}
                 style={styles.nextButton}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 accessibilityLabel={t('onboarding.next')}
                 accessibilityRole="button"
                 accessibilityHint={t('onboarding.pageOf', {
@@ -160,6 +208,7 @@ export default function OnboardingScreen() {
               onPress={finishOnboarding}
               style={styles.startButton}
               activeOpacity={0.8}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityLabel={t('onboarding.startA11y')}
               accessibilityRole="button"
             >
@@ -178,8 +227,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.black,
   },
   page: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -187,6 +234,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.xxxl * 1.5,
     marginTop: -80,
+    maxWidth: 520,
+  },
+  pageContentTablet: {
+    paddingHorizontal: Spacing.xxxl * 2,
+    marginTop: -120,
+    maxWidth: 640,
   },
   iconContainer: {
     width: 130,
@@ -197,6 +250,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.xxxl,
   },
+  iconContainerTablet: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+  },
   pageTitle: {
     fontSize: FontSize.title,
     fontWeight: FontWeight.bold,
@@ -204,11 +262,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Spacing.lg,
   },
+  pageTitleTablet: {
+    fontSize: 40,
+  },
   pageSubtitle: {
     fontSize: FontSize.body,
     color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
     lineHeight: 26,
+  },
+  pageSubtitleTablet: {
+    fontSize: 20,
+    lineHeight: 30,
   },
   bottomOverlay: {
     position: 'absolute',
@@ -217,6 +282,10 @@ const styles = StyleSheet.create({
     right: 0,
     paddingBottom: Platform.OS === 'ios' ? 50 : 30,
     paddingHorizontal: Spacing.xxl,
+  },
+  bottomOverlayTablet: {
+    paddingHorizontal: Spacing.xxxl * 2,
+    paddingBottom: Platform.OS === 'ios' ? 64 : 40,
   },
   dotsContainer: {
     flexDirection: 'row',
@@ -245,6 +314,8 @@ const styles = StyleSheet.create({
   skipButton: {
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   skipText: {
     fontSize: FontSize.body,
@@ -256,6 +327,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xxxl,
     borderRadius: BorderRadius.full,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   nextText: {
     fontSize: FontSize.body,
@@ -268,6 +341,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
+    minHeight: 52,
+    justifyContent: 'center',
   },
   startText: {
     fontSize: FontSize.body,
