@@ -131,6 +131,35 @@ export default function LoginScreen() {
     try {
       setAppleLoading(true);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Runtime gate: if the native module is missing or iCloud is not configured
+      // on this device, fail fast with a friendly, translated message.
+      // Mirrors the lazy require pattern in services/appleAuth.ts and is the
+      // user-facing complement to the iOS 26 / iPad reviewer hardening.
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const Apple = await (async () => {
+        try {
+          return require('expo-apple-authentication');
+        } catch {
+          return null;
+        }
+      })();
+      if (!Apple) {
+        Alert.alert(
+          t('common.error'),
+          'Sign in with Apple não está disponível neste dispositivo.',
+        );
+        return;
+      }
+      const isAvailable = await Apple.isAvailableAsync().catch(() => false);
+      if (!isAvailable) {
+        Alert.alert(
+          t('common.error'),
+          'Sign in with Apple requer iCloud configurado neste dispositivo.',
+        );
+        return;
+      }
+
       const result = await signInWithApple();
       if (!result) {
         // User cancelled
@@ -138,7 +167,18 @@ export default function LoginScreen() {
       }
     } catch (err: unknown) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      const message = err instanceof Error ? err.message : t('auth.loginError');
+      const code =
+        err && typeof err === 'object' && 'code' in err
+          ? (err as { code?: string }).code
+          : undefined;
+      // User canceled — silent, do not show alert.
+      if (code === 'ERR_REQUEST_CANCELED') {
+        return;
+      }
+      let message = err instanceof Error ? err.message : t('auth.loginError');
+      if (code === 'ERR_REQUEST_FAILED') {
+        message = 'Falha de conexão. Tente novamente em instantes.';
+      }
       Alert.alert(t('common.error'), message);
     } finally {
       setAppleLoading(false);

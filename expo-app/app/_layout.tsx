@@ -23,6 +23,19 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { OfflineBanner } from '../components/OfflineBanner';
 import { Colors } from '../constants/theme';
 
+// Absolute splash watchdog — final safety net (Apple 2.1(a) iPad defense).
+// 12s absolute timeout: hide splash regardless of app state. Wrapped in
+// try/catch for ZERO module-eval crash risk on iOS 26 New Architecture.
+try {
+  setTimeout(() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const SS = require('expo-splash-screen');
+      SS?.hideAsync?.()?.catch?.(() => {});
+    } catch {}
+  }, 12000);
+} catch {}
+
 // Sentry lazy init — NEVER call Sentry.init() at module scope.
 // On iOS 26 New Architecture (TurboModules), native module calls during JS
 // bundle evaluation can raise ObjC exceptions before the RN bridge is ready,

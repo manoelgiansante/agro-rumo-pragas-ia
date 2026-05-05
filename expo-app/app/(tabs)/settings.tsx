@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
 import { LANGUAGE_KEY } from '../../i18n';
 import {
@@ -34,7 +35,7 @@ import { restorePurchases, isRevenueCatConfigured } from '../../services/purchas
 import { AppBar, Chip, SectionHeader } from '../../components/ui';
 
 const PUSH_ENABLED_KEY = '@rumo_pragas_push_enabled';
-const APP_VERSION = '1.0.0';
+const APP_VERSION = Constants.expoConfig?.version ?? '1.0.1';
 
 const PLAN_LIMITS: Record<string, number> = {
   free: 3,

@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import * as Sentry from '@sentry/react-native';
+import { captureException } from '../services/sentry-shim';
 import { Colors, Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
 import { useAuthContext } from '../contexts/AuthContext';
 import { setLocationConsent } from '../services/userPreferences';
@@ -59,7 +59,7 @@ export default function ConsentLocationScreen() {
       // user on this screen. They can revisit the choice later from Settings.
       if (__DEV__) console.warn('[consent-location] accept save failed:', e);
       try {
-        Sentry.captureException(e, { tags: { feature: 'consent-location', action: 'accept' } });
+        captureException(e, { tags: { feature: 'consent-location', action: 'accept' } });
       } catch {
         /* never crash on Sentry */
       }
@@ -80,7 +80,7 @@ export default function ConsentLocationScreen() {
       // Even if save fails, treat as declined and move on — default is no consent
       if (__DEV__) console.warn('[consent-location] decline save failed:', e);
       try {
-        Sentry.captureException(e, { tags: { feature: 'consent-location', action: 'decline' } });
+        captureException(e, { tags: { feature: 'consent-location', action: 'decline' } });
       } catch {
         /* never crash on Sentry */
       }
